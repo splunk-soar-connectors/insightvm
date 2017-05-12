@@ -21,10 +21,16 @@ import insightvm_consts as consts
 from lxml import etree
 
 import time
+import json
 import requests
 import xmltodict
-import simplejson as json
 from datetime import datetime
+from bs4 import BeautifulSoup
+
+
+class RetVal(tuple):
+    def __new__(cls, val1, val2):
+        return tuple.__new__(RetVal, (val1, val2))
 
 
 # Define the App Class
@@ -80,6 +86,79 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return phantom.APP_SUCCESS
 
+    def _process_empty_reponse(self, response, action_result):
+
+        if response.status_code == 200:
+            return RetVal(phantom.APP_SUCCESS, {})
+
+        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
+
+    def _process_html_response(self, response, action_result):
+
+        # An html response, is bound to be an error
+        status_code = response.status_code
+
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+            error_text = soup.text
+            split_lines = error_text.split('\n')
+            split_lines = [x.strip() for x in split_lines if x.strip()]
+            error_text = '\n'.join(split_lines)
+        except:
+            error_text = "Cannot parse error details"
+
+        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
+                error_text)
+
+        message = message.replace('{', '{{').replace('}', '}}')
+
+        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
+
+    def _process_xml_response(self, r, action_result):
+
+        # Try an xml parse
+        try:
+            resp_xml = etree.fromstring(r.content)
+            resp_json = json.loads(json.dumps(xmltodict.parse(etree.tostring(resp_xml))))
+        except Exception as e:
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_PARSE_XML, e), None
+
+        if r.status_code == 200:
+            return RetVal(phantom.APP_SUCCESS, resp_json)
+
+        action_result.add_data(resp_json)
+        message = r.text.replace('{', '{{').replace('}', '}}')
+        return RetVal(action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+
+    def _process_response(self, r, action_result):
+
+        # store the r_text in debug data, it will get dumped in the logs if an error occurs
+        if hasattr(action_result, 'add_debug_data'):
+            if r is not None:
+                action_result.add_debug_data({'r_text': r.text})
+                action_result.add_debug_data({'r_headers': r.headers})
+                action_result.add_debug_data({'r_status_code': r.status_code})
+            else:
+                action_result.add_debug_data({'r_text': 'r is None'})
+                return RetVal(action_result.set_status(phantom.APP_ERROR, "Got no response from InsightVM instance"), None)
+
+        # There are just too many differences in the response to handle all of them in the same function
+        if 'xml' in r.headers.get('Content-Type', ''):
+            return self._process_xml_response(r, action_result)
+
+        if 'html' in r.headers.get('Content-Type', ''):
+            return self._process_html_response(r, action_result)
+
+        # it's not an html or json, handle if it is a successfull empty reponse
+        if not r.text:
+            return self._process_empty_reponse(r, action_result)
+
+        # everything else is actually an error at this point
+        message = "Can't process resonse from server. Status Code: {0} Data from server: {1}".format(
+                r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+
+        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
+
     def _make_soap_call(self, action_result, endpoint, param_dict):
 
         config = self.get_config()
@@ -95,21 +174,9 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None
+            return RetVal(action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None)
 
-        resp_xml = etree.fromstring(response.content)
-
-        try:
-
-            resp_json = json.loads(json.dumps(xmltodict.parse(etree.tostring(resp_xml))))
-
-            if (response.status_code != 200):
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_STATUS), None
-
-        except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_PARSE_XML, e), None
-
-        return action_result.set_status(phantom.APP_SUCCESS), resp_json
+        return self._process_response(response, action_result)
 
     def _response_stripper(self, strippee, ret_dict):
 
@@ -153,7 +220,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self.save_progress("Test connectivity passed")
 
-        return phantom.APP_SUCCESS
+        return action_result.set_status(phantom.APP_SUCCESS)
 
     def _list_sites(self, param):
 
@@ -215,7 +282,7 @@ class InsightVMConnector(phantom.BaseConnector):
                     continue
 
             container = {}
-            container['name'] = scan['@scan-id']
+            container['name'] = "Scan ID {0}".format(scan['@scan-id'])
             container['source_data_identifier'] = scan['@scan-id']
             container['label'] = config.get('ingest', {}).get('container_label')
             container['description'] = 'Scan {0} for Site {1}'.format(scan['@scan-id'], scan['@site-id'])
@@ -230,6 +297,7 @@ class InsightVMConnector(phantom.BaseConnector):
             scan_artifact['name'] = 'Scan Artifact'
             scan_artifact['container_id'] = container_id
             scan_artifact['source_data_identifier'] = scan['@scan-id']
+            scan_artifact['cef_types'] = {'scan-id': ['insightvm scan id']}
             scan_artifact['cef'] = {'scan-id': scan['@scan-id'],
                     'startTime': scan['@startTime'],
                     'engineId': scan['@engine-id'],
@@ -278,11 +346,11 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self.debug_print("action_id", self.get_action_identifier())
 
-        if (action_id == self.ACTION_ID_LIST_SITES):
+        if action_id == self.ACTION_ID_LIST_SITES:
             ret_val = self._list_sites(param)
-        elif (action_id == self.ACTION_ID_ON_POLL):
+        elif action_id == self.ACTION_ID_ON_POLL:
             ret_val = self._on_poll(param)
-        elif (action_id == self.ACTION_ID_TEST_CONNECTIVITY):
+        elif action_id == self.ACTION_ID_TEST_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
 
         return ret_val
