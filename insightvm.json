@@ -1,0 +1,171 @@
+{
+    "appid": "07ed44af-5de5-480a-90f5-5ea09a8077fb",
+    "name": "InsightVM",
+    "description": "This app integrates with Rapid7 InsightVM to ingest scan data",
+    "publisher": "Phantom",
+    "package_name": "phantom_insightvm",
+    "type": "information",
+    "license": "Copyright (c) Phantom Cyber Corporation 2017",
+    "main_module": "insightvm_connector.pyc",
+    "app_version": "1.0.0",
+    "utctime_updated": "2016-12-16T01:34:57.000000Z",
+    "product_vendor": "Rapid7",
+    "product_name": "InsightVM",
+    "product_version_regex": ".*",
+    "min_phantom_version": "2.1.200",
+    "logo": "rapid7.png",
+    "configuration": {
+      "device": {
+        "data_type": "string",
+        "description": "InsightVM IP or hostname",
+        "required": true,
+        "order": 0
+      },
+      "port": {
+        "data_type": "numeric",
+        "description": "InsightVM port",
+        "required": true,
+        "order": 1
+      },
+      "username": {
+        "data_type": "string",
+        "description": "InsightVM username",
+        "required": true,
+        "order": 2
+      },
+      "password": {
+        "data_type": "password",
+        "description": "InsightVM password",
+        "required": true,
+        "order": 3
+      },
+      "site": {
+        "data_type": "numeric",
+        "description": "ID of site to ingest from",
+        "required": true,
+        "order": 4
+      },
+      "verify_server_cert": {
+        "data_type": "boolean",
+        "order": 5,
+        "description": "Verify server certificate",
+        "required": true,
+        "default": false
+      }
+    },
+    "actions": [
+      {
+        "action" : "test connectivity",
+        "description": "Checks authentication with the InsightVM instance",
+        "type": "test",
+        "identifier": "test_connectivity",
+        "read_only": true,
+        "parameters": {},
+        "output": [],
+        "versions": "EQ(*)"
+      },
+      {
+        "action" : "list sites",
+        "description": "List all sites found on the InsightVM instance",
+        "type": "investigate",
+        "identifier": "list_sites",
+        "read_only": true,
+        "parameters": {},
+        "render": {
+          "type": "table",
+          "width": 12,
+          "height": 5,
+          "title": "Sites"
+        },
+        "output": [
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.success",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.id",
+            "data_type": "string",
+            "column_name": "ID",
+            "column_order": 0
+          },
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.name",
+            "data_type": "string",
+            "column_name": "Name",
+            "column_order": 1
+          },
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.riskscore",
+            "data_type": "string",
+            "column_name": "Risk Score",
+            "column_order": 2
+          },
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.riskfactor",
+            "data_type": "string",
+            "column_name": "Risk Factor",
+            "column_order": 3
+          },
+          {
+            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.description",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.status",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.message",
+            "data_type": "string"
+          },
+          {
+            "data_path": "action_result.summary.num_sites",
+            "data_type": "numeric"
+          },
+          {
+            "data_path": "summary.total_objects",
+            "data_type": "numeric"
+          },
+          {
+            "data_path": "summary.total_objects_successful",
+            "data_type": "numeric"
+          }
+        ],
+        "versions": "EQ(*)"
+      },
+      {
+        "action" : "on poll",
+        "description": "Ingest scan data from InsightVM",
+        "verbose": "Basic configuration parameters for this action are available in asset configuration.<br><br>Only scan data from the site specified in the <b>site</b> asset configuration parameter will be ingested.<br><br>The app will create a container for each scan that has completed on the site since the last polling interval. Each container will have an artifact with information about the scan including site ID, scan ID, and engine ID. The other artifacts in the container will contain data about the vulnerabilities detected during the scan with each CEF field having a count of vulnerabilities found.<br><br>POLL NOW will ingest the oldest scans up to a maximum specified by <b>container_count</b>.",
+        "type": "ingest",
+        "identifier": "on_poll",
+        "read_only": true,
+        "parameters": {
+          "start_time": {
+            "data_type": "numeric",
+            "description": "Parameter ignored in this app"
+          },
+          "end_time": {
+            "data_type": "numeric",
+            "description": "Parameter ignored in this app"
+          },
+          "container_id": {
+            "data_type": "string",
+            "description": "Parameter ignored in this app"
+          },
+          "container_count": {
+            "data_type": "numeric",
+            "description": "Maximum numer of reports to ingest during poll now",
+            "required": false,
+            "default": 1
+          },
+          "artifact_count": {
+            "data_type": "numeric",
+            "description": "Parameter ignored in this app"
+          }
+        },
+        "output": [],
+        "versions": "EQ(*)"
+      }
+    ]
+}
