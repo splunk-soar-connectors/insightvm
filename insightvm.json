@@ -1,7 +1,7 @@
 {
     "appid": "07ed44af-5de5-480a-90f5-5ea09a8077fb",
     "name": "InsightVM",
-    "description": "This app integrates with Rapid7 InsightVM to ingest scan data",
+    "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data",
     "publisher": "Phantom",
     "package_name": "phantom_insightvm",
     "type": "information",
