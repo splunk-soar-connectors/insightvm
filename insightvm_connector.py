@@ -135,9 +135,9 @@ class InsightVMConnector(phantom.BaseConnector):
         # store the r_text in debug data, it will get dumped in the logs if an error occurs
         if hasattr(action_result, 'add_debug_data'):
             if r is not None:
+                action_result.add_debug_data({'r_status_code': r.status_code})
                 action_result.add_debug_data({'r_text': r.text})
                 action_result.add_debug_data({'r_headers': r.headers})
-                action_result.add_debug_data({'r_status_code': r.status_code})
             else:
                 action_result.add_debug_data({'r_text': 'r is None'})
                 return RetVal(action_result.set_status(phantom.APP_ERROR, "Got no response from InsightVM instance"), None)
