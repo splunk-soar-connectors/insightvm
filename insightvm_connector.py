@@ -172,7 +172,7 @@ class InsightVMConnector(phantom.BaseConnector):
             root.set('session-id', self._session_id)
 
         try:
-            response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
+            response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None)
 
@@ -322,16 +322,17 @@ class InsightVMConnector(phantom.BaseConnector):
                 continue
 
             scan_artifact = {}
+            scan_artifact['type'] = 'scan'
             scan_artifact['label'] = 'scan'
             scan_artifact['name'] = 'Scan Artifact'
             scan_artifact['container_id'] = container_id
             scan_artifact['source_data_identifier'] = scan['@scan-id']
             scan_artifact['cef_types'] = {'scan-id': ['insightvm scan id']}
-            scan_artifact['cef'] = {'scan-id': scan['@scan-id'],
+            scan_artifact['cef'] = {'scanId': scan['@scan-id'],
                     'startTime': scan['@startTime'],
                     'engineId': scan['@engine-id'],
                     'endTime': scan['@endTime'],
-                    'siteId': scan['@scan-id'],
+                    'siteId': scan['@site-id'],
                     'status': scan['@status'],
                     'name': scan['@name']}
 
@@ -346,6 +347,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
                     artifact['cef'] = {'total': 0}
                     artifact['name'] = vuln['@status']
+                    artifact['type'] = 'vulnerability'
                     artifact['label'] = 'vulnerability'
                     artifact['container_id'] = container_id
                     artifact['source_data_identifier'] = scan['@scan-id']
