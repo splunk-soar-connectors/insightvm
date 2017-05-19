@@ -13,8 +13,10 @@
 # --
 
 INSIGHTVM_ERR_BAD_STATUS = "Call to InsightVM failed"
+INSIGHTVM_ERR_TEST_CONNECTIVITY = "Test connectivity failed"
 INSIGHTVM_ERR_SERVER_CONNECTION = "Could not connect to InsightVM server"
 INSIGHTVM_ERR_PARSE_XML = "Could not parse XML response from InsightVM server"
+INSIGHTVM_ERR_BAD_SITE = "The given site could not be found on the InsightVM server"
 INSIGHTVM_ERR_NO_SESSION_ID = "Could not get session ID from login call to InsightVM server"
 
 INSIGHTVM_API_URL = "https://{0}:{1}/api/1.1/xml"

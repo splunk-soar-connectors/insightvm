@@ -154,7 +154,7 @@ class InsightVMConnector(phantom.BaseConnector):
             return self._process_empty_reponse(r, action_result)
 
         # everything else is actually an error at this point
-        message = "Can't process resonse from server. Status Code: {0} Data from server: {1}".format(
+        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
                 r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
@@ -172,7 +172,7 @@ class InsightVMConnector(phantom.BaseConnector):
             root.set('session-id', self._session_id)
 
         try:
-            response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config[phantom.APP_JSON_VERIFY])
+            response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None)
 
@@ -182,8 +182,11 @@ class InsightVMConnector(phantom.BaseConnector):
 
         for k, v in strippee.iteritems():
 
-            if k.startswith('@'):
-                k = k[1:]
+            k = k.replace('@', '')
+            k = k.replace('-', ' ')
+            k = k.title()
+            k = k.replace(' ', '')
+            k = k[0].lower() + k[1:]
 
             if type(v) == dict:
                 ret_dict[k] = {}
@@ -204,7 +207,7 @@ class InsightVMConnector(phantom.BaseConnector):
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
         if not self._login(action_result):
-            self.save_progress("Test connectivity failed")
+            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
             return action_result.get_status()
 
         endpoint = 'SystemInformationRequest'
@@ -218,9 +221,40 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self.save_progress("Detected InsightVM version {0}".format(version))
 
+        if not self._check_for_site(action_result, self.get_config()['site']):
+            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+
         self.save_progress("Test connectivity passed")
 
         return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _check_for_site(self, action_result, site):
+
+        sites = self._get_sites(action_result)
+
+        if sites is None:
+            return False
+
+        sites = [x.get('id') for x in sites.get('SiteListingResponse', {}).get('SiteSummary', [])]
+
+        if site not in sites:
+            return False
+        return True
+
+    def _get_sites(self, action_result):
+
+        endpoint = 'SiteListingRequest'
+
+        ret_val, resp_data = self._make_soap_call(action_result, endpoint, {})
+
+        if not ret_val:
+            return None
+
+        stripped_data = {}
+        self._response_stripper(resp_data, stripped_data)
+
+        return stripped_data
 
     def _list_sites(self, param):
 
@@ -229,19 +263,14 @@ class InsightVMConnector(phantom.BaseConnector):
         if not self._login(action_result):
             return action_result.get_status()
 
-        endpoint = 'SiteListingRequest'
+        sites = self._get_sites(action_result)
 
-        ret_val, resp_data = self._make_soap_call(action_result, endpoint, {})
+        if sites is None:
+            return phantom.APP_ERROR
 
-        if not ret_val:
-            return ret_val
+        action_result.add_data(sites)
 
-        stripped_data = {}
-        self._response_stripper(resp_data, stripped_data)
-
-        action_result.add_data(stripped_data)
-
-        action_result.set_summary({'num_sites': len(stripped_data.get('SiteListingResponse', {}).get('SiteSummary', []))})
+        action_result.set_summary({'num_sites': len(sites.get('SiteListingResponse', {}).get('SiteSummary', []))})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -252,6 +281,9 @@ class InsightVMConnector(phantom.BaseConnector):
 
         if not self._login(action_result):
             return action_result.get_status()
+
+        if not self._check_for_site(action_result, self.get_config()['site']):
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
         endpoint = 'SiteScanHistoryRequest'
 
@@ -293,18 +325,15 @@ class InsightVMConnector(phantom.BaseConnector):
                 continue
 
             scan_artifact = {}
+            scan_artifact['cef'] = {}
+            scan_artifact['type'] = 'scan'
             scan_artifact['label'] = 'scan'
             scan_artifact['name'] = 'Scan Artifact'
             scan_artifact['container_id'] = container_id
             scan_artifact['source_data_identifier'] = scan['@scan-id']
-            scan_artifact['cef_types'] = {'scan-id': ['insightvm scan id']}
-            scan_artifact['cef'] = {'scan-id': scan['@scan-id'],
-                    'startTime': scan['@startTime'],
-                    'engineId': scan['@engine-id'],
-                    'endTime': scan['@endTime'],
-                    'siteId': scan['@scan-id'],
-                    'status': scan['@status'],
-                    'name': scan['@name']}
+            scan_artifact['cef_types'] = {'scanId': ['insightvm scan id']}
+
+            self._response_stripper(scan, scan_artifact['cef'])
 
             total = 0
             artifacts = {}
@@ -317,6 +346,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
                     artifact['cef'] = {'total': 0}
                     artifact['name'] = vuln['@status']
+                    artifact['type'] = 'vulnerability'
                     artifact['label'] = 'vulnerability'
                     artifact['container_id'] = container_id
                     artifact['source_data_identifier'] = scan['@scan-id']
