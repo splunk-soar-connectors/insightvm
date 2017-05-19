@@ -183,7 +183,11 @@ class InsightVMConnector(phantom.BaseConnector):
         for k, v in strippee.iteritems():
 
             if k.startswith('@'):
-                k = k[1:]
+                k = k.replace('@', '')
+                k = k.replace('-', ' ')
+                k = k.title()
+                k = k.replace(' ', '')
+                k = k[0].lower() + k[1:]
 
             if type(v) == dict:
                 ret_dict[k] = {}
@@ -322,19 +326,15 @@ class InsightVMConnector(phantom.BaseConnector):
                 continue
 
             scan_artifact = {}
+            scan_artifact['cef'] = {}
             scan_artifact['type'] = 'scan'
             scan_artifact['label'] = 'scan'
             scan_artifact['name'] = 'Scan Artifact'
             scan_artifact['container_id'] = container_id
             scan_artifact['source_data_identifier'] = scan['@scan-id']
-            scan_artifact['cef_types'] = {'scan-id': ['insightvm scan id']}
-            scan_artifact['cef'] = {'scanId': scan['@scan-id'],
-                    'startTime': scan['@startTime'],
-                    'engineId': scan['@engine-id'],
-                    'endTime': scan['@endTime'],
-                    'siteId': scan['@site-id'],
-                    'status': scan['@status'],
-                    'name': scan['@name']}
+            scan_artifact['cef_types'] = {'scanId': ['insightvm scan id']}
+
+            self._response_stripper(scan, scan_artifact['cef'])
 
             total = 0
             artifacts = {}
