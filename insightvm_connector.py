@@ -182,12 +182,11 @@ class InsightVMConnector(phantom.BaseConnector):
 
         for k, v in strippee.iteritems():
 
-            if k.startswith('@'):
-                k = k.replace('@', '')
-                k = k.replace('-', ' ')
-                k = k.title()
-                k = k.replace(' ', '')
-                k = k[0].lower() + k[1:]
+            k = k.replace('@', '')
+            k = k.replace('-', ' ')
+            k = k.title()
+            k = k.replace(' ', '')
+            k = k[0].lower() + k[1:]
 
             if type(v) == dict:
                 ret_dict[k] = {}
