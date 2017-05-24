@@ -25,6 +25,7 @@
         "data_type": "numeric",
         "description": "Port",
         "required": true,
+        "default": 3780,
         "order": 1
       },
       "username": {
