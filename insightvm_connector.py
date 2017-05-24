@@ -183,8 +183,9 @@ class InsightVMConnector(phantom.BaseConnector):
         for k, v in strippee.iteritems():
 
             k = k.replace('@', '')
-            k = k.replace('-', ' ')
-            k = k.title()
+            if '-' in k:
+                k = k.replace('-', ' ')
+                k = k.title()
             k = k.replace(' ', '')
             k = k[0].lower() + k[1:]
 
@@ -236,7 +237,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if sites is None:
             return False
 
-        sites = [x.get('id') for x in sites.get('SiteListingResponse', {}).get('SiteSummary', [])]
+        sites = [int(x.get('id')) for x in sites.get('siteListingResponse', {}).get('siteSummary', [])]
 
         if site not in sites:
             return False
