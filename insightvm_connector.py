@@ -239,7 +239,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         sites = [int(x.get('id')) for x in sites.get('siteListingResponse', {}).get('siteSummary', [])]
 
-        if site not in sites:
+        if int(site) not in sites:
             return False
         return True
 
