@@ -128,7 +128,7 @@ class InsightVMConnector(phantom.BaseConnector):
             message = r.text.replace('{', '{{').replace('}', '}}')
             return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
 
-        resp_str = endpoint.split('Request')[0] + 'Response'
+        resp_str = endpoint.replace('Request', 'Response')
 
         if int(resp_json.get(resp_str, {}).get('@success', '0')):
             return RetVal(phantom.APP_SUCCESS, resp_json)
