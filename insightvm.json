@@ -80,35 +80,35 @@
         },
         "output": [
           {
-            "data_path": "action_result.data.*.SiteListingResponse.success",
+            "data_path": "action_result.data.*.siteListingResponse.success",
             "data_type": "string"
           },
           {
-            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.id",
+            "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.id",
             "data_type": "string",
             "column_name": "ID",
             "column_order": 0
           },
           {
-            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.name",
+            "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.name",
             "data_type": "string",
             "column_name": "Name",
             "column_order": 1
           },
           {
-            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.riskscore",
+            "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskscore",
             "data_type": "string",
             "column_name": "Risk Score",
             "column_order": 2
           },
           {
-            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.riskfactor",
+            "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskfactor",
             "data_type": "string",
             "column_name": "Risk Factor",
             "column_order": 3
           },
           {
-            "data_path": "action_result.data.*.SiteListingResponse.SiteSummary.*.description",
+            "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.description",
             "data_type": "string"
           },
           {

@@ -114,7 +114,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _process_xml_response(self, r, action_result):
+    def _process_xml_response(self, r, action_result, endpoint):
 
         # Try an xml parse
         try:
@@ -123,14 +123,30 @@ class InsightVMConnector(phantom.BaseConnector):
         except Exception as e:
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_PARSE_XML, e), None
 
-        if r.status_code == 200:
+        if r.status_code != 200:
+            action_result.add_data(resp_json)
+            message = r.text.replace('{', '{{').replace('}', '}}')
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+
+        resp_str = endpoint.split('Request')[0] + 'Response'
+
+        if int(resp_json.get(resp_str, {}).get('@success', '0')):
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
-        action_result.add_data(resp_json)
-        message = r.text.replace('{', '{{').replace('}', '}}')
-        return RetVal(action_result.set_status( phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+        xml_root = resp_json.get(resp_str)
+        if not xml_root:
+            xml_root = resp_json.get('XMLResponse', {})
 
-    def _process_response(self, r, action_result):
+        message = xml_root.get('Failure', {}).get('Exception', {}).get('message')
+        if not message:
+            message = r.text.replace('{', '{{').replace('}', '}}')
+        elif message == consts.INSIGHTVM_ERR_NEED_AUTH:
+            message = consts.INSIGHTVM_ERR_BAD_CREDS
+
+        action_result.add_data(resp_json)
+        return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+
+    def _process_response(self, r, action_result, endpoint):
 
         # store the r_text in debug data, it will get dumped in the logs if an error occurs
         if hasattr(action_result, 'add_debug_data'):
@@ -144,7 +160,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # There are just too many differences in the response to handle all of them in the same function
         if 'xml' in r.headers.get('Content-Type', ''):
-            return self._process_xml_response(r, action_result)
+            return self._process_xml_response(r, action_result, endpoint)
 
         if 'html' in r.headers.get('Content-Type', ''):
             return self._process_html_response(r, action_result)
@@ -176,7 +192,7 @@ class InsightVMConnector(phantom.BaseConnector):
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None)
 
-        return self._process_response(response, action_result)
+        return self._process_response(response, action_result, endpoint)
 
     def _response_stripper(self, strippee, ret_dict):
 
@@ -271,7 +287,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         action_result.add_data(sites)
 
-        action_result.set_summary({'num_sites': len(sites.get('SiteListingResponse', {}).get('SiteSummary', []))})
+        action_result.set_summary({'num_sites': len(sites.get('siteListingResponse', {}).get('siteSummary', []))})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -283,7 +299,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if not self._login(action_result):
             return action_result.get_status()
 
-        if not self._check_for_site(action_result, self.get_config()['site']):
+        if not self._check_for_site(action_result, config['site']):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
         endpoint = 'SiteScanHistoryRequest'
@@ -298,7 +314,12 @@ class InsightVMConnector(phantom.BaseConnector):
         else:
             max_containers = param.get('container_count', consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
 
-        for scan in dict(resp_data).get('SiteScanHistoryResponse', {}).get('ScanSummary', []):
+        scan_data = dict(resp_data).get('SiteScanHistoryResponse', {}).get('ScanSummary', [])
+
+        if isinstance(scan_data, dict):
+            scan_data = [scan_data]
+
+        for scan in scan_data:
 
             if scan['@status'] != 'finished':
                 continue
