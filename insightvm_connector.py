@@ -86,6 +86,21 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return phantom.APP_SUCCESS
 
+    def _process_request_exception(self, exception):
+
+        addition = ''
+        e_str = str(exception)
+        if 'Max retries exceeded' in e_str:
+            addition = consts.INSIGHTVM_ERR_BAD_IP
+        elif 'bad handshake' in e_str:
+            addition = consts.INSIGHTVM_ERR_BAD_CERT
+
+        if not addition:
+            return consts.INSIGHTVM_ERR_SERVER_CONNECTION.format(exception)
+
+        self.save_progress(consts.INSIGHTVM_ERR_SERVER_CONNECTION.format(exception))
+        return addition
+
     def _process_empty_reponse(self, response, action_result):
 
         if response.status_code == 200:
@@ -190,7 +205,7 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_SERVER_CONNECTION, e), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, self._process_request_exception(e)), None)
 
         return self._process_response(response, action_result, endpoint)
 
