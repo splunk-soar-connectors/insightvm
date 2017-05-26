@@ -21,7 +21,7 @@ INSIGHTVM_ERR_BAD_IP = "This error usually indicates that the IP or port is inco
 INSIGHTVM_ERR_BAD_CREDS = "The provided credentials were rejected by the InsightVM server"
 INSIGHTVM_ERR_NO_SESSION_ID = "Could not get session ID from login call to InsightVM server"
 INSIGHTVM_ERR_SERVER_CONNECTION = "Could not connect to InsightVM server. Error string: {0}"
-INSIGHTVM_ERR_BAD_CERT = "This error usually indicates that the certificate on the server is invalid"
+INSIGHTVM_ERR_BAD_CERT = "This error usually indicates that the certificate on the server could not be verified"
 
 INSIGHTVM_API_URL = "https://{0}:{1}/api/1.1/xml"
 
