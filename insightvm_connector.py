@@ -92,7 +92,7 @@ class InsightVMConnector(phantom.BaseConnector):
         e_str = str(exception)
         if 'Max retries exceeded' in e_str:
             addition = consts.INSIGHTVM_ERR_BAD_IP
-        elif 'bad handshake' in e_str:
+        elif 'bad handshake' in e_str or '_ssl.c:504' in e_str:
             addition = consts.INSIGHTVM_ERR_BAD_CERT
 
         if not addition:
