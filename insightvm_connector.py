@@ -1,14 +1,10 @@
 # --
 # File: insightvm_connector.py
 #
-# Copyright (c) Phantom Cyber Corporation, 2017-2018
+# Copyright (c) 2017-2021 Splunk Inc.
 #
-# This unpublished material is proprietary to Phantom Cyber.
-# All rights reserved. The methods and
-# techniques described herein are considered trade secrets
-# and/or confidential. Reproduction or distribution, in whole
-# or in part, is forbidden except by express written permission
-# of Phantom Cyber.
+# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
+# without a valid written license from Splunk Inc. is PROHIBITED.
 #
 # --
 
@@ -19,6 +15,7 @@ import phantom.app as phantom
 import insightvm_consts as consts
 
 from lxml import etree
+from defusedxml import ElementTree
 
 import time
 import json
@@ -35,7 +32,6 @@ class RetVal(tuple):
 
 # Define the App Class
 class InsightVMConnector(phantom.BaseConnector):
-
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_LIST_SITES = "list_sites"
     ACTION_ID_TEST_CONNECTIVITY = "test_connectivity"
@@ -47,6 +43,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self._base_url = None
         self._session_id = None
+        self._state = None
         self._headers = {'Content-Type': 'application/xml'}
 
     def initialize(self):
@@ -71,8 +68,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         endpoint = 'LoginRequest'
 
-        params = {'user-id': config[phantom.APP_JSON_USERNAME],
-                'password': config[phantom.APP_JSON_PASSWORD]}
+        params = {'user-id': config[phantom.APP_JSON_USERNAME], 'password': config[phantom.APP_JSON_PASSWORD]}
 
         ret_val, resp_data = self._make_soap_call(action_result, endpoint, params)
 
@@ -123,7 +119,7 @@ class InsightVMConnector(phantom.BaseConnector):
             error_text = "Cannot parse error details"
 
         message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
-                error_text)
+                                                                      error_text)
 
         message = message.replace('{', '{{').replace('}', '}}')
 
@@ -133,10 +129,10 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # Try an xml parse
         try:
-            resp_xml = etree.fromstring(r.content)
-            resp_json = json.loads(json.dumps(xmltodict.parse(etree.tostring(resp_xml))))
+            resp_xml = ElementTree.fromstring(r.content)
+            resp_json = json.loads(json.dumps(xmltodict.parse(ElementTree.tostring(resp_xml))))
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_PARSE_XML, e), None
+            return action_result.set_status(phantom.APP_ERROR, "{0}: {1}".format(consts.INSIGHTVM_ERR_PARSE_XML, e)), None
 
         if r.status_code != 200:
             action_result.add_data(resp_json)
@@ -186,7 +182,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-                r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+            r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -196,14 +192,14 @@ class InsightVMConnector(phantom.BaseConnector):
 
         root = etree.Element(endpoint)
 
-        for k, v in param_dict.iteritems():
+        for k, v in param_dict.items():
             root.set(k, v)
 
         if endpoint != 'LoginRequest':
             root.set('session-id', self._session_id)
 
         try:
-            response = requests.post(self._base_url, data=etree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
+            response = requests.post(self._base_url, data=ElementTree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, self._process_request_exception(e)), None)
 
@@ -211,7 +207,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
     def _response_stripper(self, strippee, ret_dict):
 
-        for k, v in strippee.iteritems():
+        for k, v in strippee.items():
 
             k = k.replace('@', '')
             if '-' in k:
@@ -257,7 +253,7 @@ class InsightVMConnector(phantom.BaseConnector):
             self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
-        self.save_progress("Test connectivity passed")
+        self.save_progress(consts.INSIGHT_SUCCESS_TEST_CONNECTIVITY)
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -322,6 +318,7 @@ class InsightVMConnector(phantom.BaseConnector):
         ret_val, resp_data = self._make_soap_call(action_result, endpoint, {'site-id': str(config['site'])})
 
         count = 0
+        max_containers = 0
         last_time = self._state.get('last_time', 0)
 
         if not self.is_poll_now():
@@ -392,15 +389,15 @@ class InsightVMConnector(phantom.BaseConnector):
                     artifact = artifacts[vuln['@status']]
 
                 total += int(vuln['@count'])
-                artifact['cef']['total'] = str(int(artifact['cef']['total']) + int(vuln['@count']))
+                artifact['cef']['total'] = int(artifact['cef']['total']) + int(vuln['@count'])
 
                 if vuln.get('@severity') is not None:
                     artifact['cef']['sev{0}'.format(vuln['@severity'])] = vuln['@count']
 
-            ret_val, message, artifact_id = self.save_artifacts(artifacts.values())
+            ret_val, message, artifact_id = self.save_artifacts(list(artifacts.values()))
 
             scan_artifact['cef']['vulnerabilities'] = str(total)
-            ret_val, message, artifact_id = self.save_artifact(scan_artifact)
+            ret_val, message, artifact_id = self.save_artifact(list(scan_artifact))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -423,24 +420,69 @@ class InsightVMConnector(phantom.BaseConnector):
         return ret_val
 
 
-if __name__ == '__main__':
+def main():
+    import pudb
+    import argparse
 
-    import sys
-    # import pudb
-    # pudb.set_trace()
+    pudb.set_trace()
 
-    if (len(sys.argv) < 2):
-        print "No test json specified as input"
-        exit(0)
+    argparser = argparse.ArgumentParser()
 
-    with open(sys.argv[1]) as f:
+    argparser.add_argument('input_test_json', help='Input Test JSON file')
+    argparser.add_argument('-u', '--username', help='username', required=False)
+    argparser.add_argument('-p', '--password', help='password', required=False)
+
+    args = argparser.parse_args()
+    session_id = None
+
+    username = args.username
+    password = args.password
+
+    if username is not None and password is None:
+        # User specified a username but not a password, so ask
+        import getpass
+        password = getpass.getpass("Password: ")
+
+    if username and password:
+        try:
+            login_url = InsightVMConnector._get_phantom_base_url() + '/login'
+
+            print("Accessing the Login page")
+            r = requests.get(login_url, verify=True)
+            csrftoken = r.cookies['csrftoken']
+
+            data = dict()
+            data['username'] = username
+            data['password'] = password
+            data['csrfmiddlewaretoken'] = csrftoken
+
+            headers = dict()
+            headers['Cookie'] = 'csrftoken=' + csrftoken
+            headers['Referer'] = login_url
+
+            print("Logging into Platform to get the session id")
+            r2 = requests.post(login_url, verify=True, data=data, headers=headers)
+            session_id = r2.cookies['sessionid']
+        except Exception as e:
+            print("Unable to get session id from the platform. Error: {}".format(str(e)))
+            exit(1)
+
+    with open(args.input_test_json) as f:
         in_json = f.read()
         in_json = json.loads(in_json)
         print(json.dumps(in_json, indent=4))
 
         connector = InsightVMConnector()
         connector.print_progress_message = True
-        ret_val = connector._handle_action(json.dumps(in_json), None)
-        print (json.dumps(json.loads(ret_val), indent=4))
 
+        if session_id is not None:
+            in_json['user_session_token'] = session_id
+            connector._set_csrf_info(csrftoken, headers['Referer'])
+
+        ret_val = connector._handle_action(json.dumps(in_json), None)
+        print(json.dumps(json.loads(ret_val), indent=4))
     exit(0)
+
+
+if __name__ == '__main__':
+    main()
