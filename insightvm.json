@@ -2,17 +2,29 @@
     "appid": "07ed44af-5de5-480a-90f5-5ea09a8077fb",
     "name": "InsightVM",
     "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data",
-    "publisher": "Phantom",
+    "publisher": "Splunk",
     "package_name": "phantom_insightvm",
     "type": "information",
-    "license": "Copyright (c) Phantom Cyber Corporation, 2017-2018",
-    "main_module": "insightvm_connector.pyc",
-    "app_version": "1.0.10",
-    "utctime_updated": "2018-01-26T00:48:17.000000Z",
+    "license": "Copyright (c) 2017-2021 Splunk Inc.",
+    "main_module": "insightvm_connector.py",
+    "app_version": "2.0.2",
+    "utctime_updated": "2021-08-12T07:36:18.000000Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
     "product_version_regex": ".*",
-    "min_phantom_version": "2.1.467",
+    "min_phantom_version": "4.9.39220",
+    "python_version": "3",
+    "latest_tested_versions": [
+        "On prem, Version 6.6.93"
+    ],
+    "pip_dependencies": {
+        "wheel": [
+            {
+                "module": "defusedxml",
+                "input_file": "wheels/defusedxml-0.7.1-py2.py3-none-any.whl"
+            }
+        ]
+    },
     "logo": "logo_rapid1.svg",
     "logo_dark": "logo_rapid1_dark.svg",
     "configuration": {
@@ -51,7 +63,6 @@
             "data_type": "boolean",
             "order": 5,
             "description": "Verify server certificate",
-            "required": false,
             "default": false
         }
     },
@@ -81,7 +92,15 @@
             },
             "output": [
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.success",
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.description",
                     "data_type": "string"
                 },
                 {
@@ -97,40 +116,48 @@
                     "column_order": 1
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskscore",
-                    "data_type": "string",
-                    "column_name": "Risk Score",
-                    "column_order": 2
-                },
-                {
                     "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskfactor",
                     "data_type": "string",
                     "column_name": "Risk Factor",
                     "column_order": 3
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.description",
-                    "data_type": "string"
+                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskscore",
+                    "data_type": "string",
+                    "column_name": "Risk Score",
+                    "column_order": 2
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.message",
+                    "data_path": "action_result.data.*.siteListingResponse.success",
                     "data_type": "string"
                 },
                 {
                     "data_path": "action_result.summary.num_sites",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Num sites: 2"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "versions": "EQ(*)"
@@ -138,7 +165,7 @@
         {
             "action": "on poll",
             "description": "Ingest scan data from InsightVM",
-            "verbose": "Basic configuration parameters for this action are available in asset configuration.<br><br>Only scan data from the site specified in the <b>site</b> asset configuration parameter will be ingested.<br><br>The app will create a container for each scan that has completed on the site since the last polling interval. Each container will have an artifact with information about the scan with the following CEF fields:<ul><li>siteId</li><li>scanId</li><li>engineId</li><li>startTime</li><li>endTime</li><li>status</li><li>vulnerabilities</li><li>nodes</li><li>tasks</li></ul>The other artifacts in the container will contain data about the vulnerabilities detected during the scan with each having a CEF field with a count of vulnerabilities found. If the information is available, CEF fields will be created with counts for different severity levels for each vulnerability. The container and all artifacts will be given a medium severity.<br><br>POLL NOW will ingest the oldest scans up to a maximum specified by <b>container_count</b>.",
+            "verbose": "Basic configuration parameters for this action are available in asset configuration.<br><br>Only scan data from the site specified in the <b>site</b> asset configuration parameter will be ingested.<br><br>The app will create a container for each scan that has been completed on the site since the last polling interval. Each container will have an artifact with information about the scan with the following CEF fields:<ul><li>siteId</li><li>scanId</li><li>engineId</li><li>startTime</li><li>endTime</li><li>status</li><li>vulnerabilities</li><li>nodes</li><li>tasks</li></ul>The other artifacts in the container will contain data about the vulnerabilities detected during the scan with each having a CEF field with a count of vulnerabilities found. If the information is available, CEF fields will be created with counts for different severity levels for each vulnerability. The container and all artifacts will be given a medium severity.<br><br>POLL NOW will ingest the oldest scans up to a maximum specified by <b>container_count</b>.",
             "type": "ingest",
             "identifier": "on_poll",
             "read_only": true,
@@ -158,7 +185,6 @@
                 "container_count": {
                     "data_type": "numeric",
                     "description": "Maximum numer of reports to ingest during poll now",
-                    "required": false,
                     "default": 1
                 },
                 "artifact_count": {

@@ -1,5 +1,6 @@
-.git*
 docker-compose.yml
-Makefile
-*.py
 exclude_files.txt
+Makefile
+.git*
+.gitlab-ci.yml
+whitesource-results
