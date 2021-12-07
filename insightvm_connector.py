@@ -205,7 +205,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         try:
             response = requests.post(self._base_url, data=ElementTree.tostring(root),
-                                    headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
+                headers=self._headers, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, self._process_request_exception(e)), None)
 
@@ -455,7 +455,7 @@ def main():
             login_url = InsightVMConnector._get_phantom_base_url() + '/login'
 
             print("Accessing the Login page")
-            r = requests.get(login_url, verify=True)
+            r = requests.get(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -468,7 +468,7 @@ def main():
             headers['Referer'] = login_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(login_url, verify=True, data=data, headers=headers)
+            r2 = requests.post(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True, data=data, headers=headers)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))
