@@ -2,14 +2,9 @@
 #
 # Copyright (c) 2017-2021 Splunk Inc.
 #
-<<<<<<< HEAD
-# SPLUNK CONFIDENTIAL - Use or disclosure of this material in whole or in part
-# without a valid written license from Splunk Inc. is PROHIBITED.
-=======
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
->>>>>>> next
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
