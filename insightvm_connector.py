@@ -14,21 +14,19 @@
 # and limitations under the License.
 #
 #
-# Phantom App imports
-import phantom.app as phantom
-
-# Imports local to this App
-import insightvm_consts as consts
-
-from lxml import etree
-from defusedxml import ElementTree
-
-import time
 import json
+import time
+from datetime import datetime
+from sys import exit
+
+import phantom.app as phantom
 import requests
 import xmltodict
-from datetime import datetime
 from bs4 import BeautifulSoup
+from defusedxml import ElementTree
+from lxml import etree
+
+import insightvm_consts as consts
 
 
 class RetVal(tuple):
@@ -143,7 +141,8 @@ class InsightVMConnector(phantom.BaseConnector):
         if r.status_code != 200:
             action_result.add_data(resp_json)
             message = r.text.replace('{', '{{').replace('}', '}}')
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(
+                r.status_code, message)), resp_json)
 
         resp_str = endpoint.replace('Request', 'Response')
 
@@ -161,7 +160,8 @@ class InsightVMConnector(phantom.BaseConnector):
             message = consts.INSIGHTVM_ERR_BAD_CREDS
 
         action_result.add_data(resp_json)
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(r.status_code, message)), resp_json)
+        return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(
+            r.status_code, message)), resp_json)
 
     def _process_response(self, r, action_result, endpoint):
 
@@ -205,7 +205,8 @@ class InsightVMConnector(phantom.BaseConnector):
             root.set('session-id', self._session_id)
 
         try:
-            response = requests.post(self._base_url, data=ElementTree.tostring(root), headers=self._headers, verify=config.get(phantom.APP_JSON_VERIFY, False))
+            response = requests.post(self._base_url, data=ElementTree.tostring(root), headers=self._headers,
+                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=config.get(phantom.APP_JSON_VERIFY, False))
         except Exception as e:
             return RetVal(action_result.set_status(phantom.APP_ERROR, self._process_request_exception(e)), None)
 
@@ -427,8 +428,9 @@ class InsightVMConnector(phantom.BaseConnector):
 
 
 def main():
-    import pudb
     import argparse
+
+    import pudb
 
     pudb.set_trace()
 
@@ -454,7 +456,7 @@ def main():
             login_url = InsightVMConnector._get_phantom_base_url() + '/login'
 
             print("Accessing the Login page")
-            r = requests.get(login_url, verify=True)
+            r = requests.get(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True)
             csrftoken = r.cookies['csrftoken']
 
             data = dict()
@@ -467,7 +469,7 @@ def main():
             headers['Referer'] = login_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(login_url, verify=True, data=data, headers=headers)
+            r2 = requests.post(login_url, verify=True, data=data, headers=headers, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT)
             session_id = r2.cookies['sessionid']
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))
