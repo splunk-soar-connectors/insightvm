@@ -2,11 +2,11 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 2\.0\.5  
+Connector Version: 2\.0\.6  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.0\.0  
+Minimum Product Version: 5\.1\.0  
 
 This app integrates with Rapid7 InsightVM \(formerly Nexpose\) to ingest scan data
 
