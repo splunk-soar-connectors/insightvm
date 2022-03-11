@@ -21,8 +21,8 @@ from sys import exit
 
 import phantom.app as phantom
 import requests
-from requests.auth import HTTPBasicAuth
 from bs4 import BeautifulSoup
+from requests.auth import HTTPBasicAuth
 
 import insightvm_consts as consts
 
