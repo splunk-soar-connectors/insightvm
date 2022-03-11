@@ -56,9 +56,9 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
 
         self._base_url = consts.INSIGHTVM_API_URL.format(config[phantom.APP_JSON_DEVICE], config[phantom.APP_JSON_PORT])
-        self._verify = config.get('verify_server_cert', False)
-        self._username = config['username']
-        self._password = config['password']
+        self._verify = config.get("verify_server_cert", False)
+        self._username = config["username"]
+        self._password = config["password"]
         self._state = self.load_state()
 
         return phantom.APP_SUCCESS
@@ -74,7 +74,10 @@ class InsightVMConnector(phantom.BaseConnector):
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
+        return RetVal(
+            action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"),
+            None
+        )
 
     def _process_html_response(self, response, action_result):
 
@@ -84,17 +87,15 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             soup = BeautifulSoup(response.text, "html.parser")
             error_text = soup.text
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
+            error_text = "\n".join(split_lines)
         except Exception:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(
-            status_code,
-            error_text)
+        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
 
-        message = message.replace('{', '{{').replace('}', '}}')
+        message = message.replace("{", "{{").replace("}", "}}")
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -104,7 +105,10 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             resp_json = r.json()
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))), None)
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))),
+                None
+            )
 
         # Please specify the status codes here
         if 200 <= r.status_code < 399:
@@ -112,29 +116,30 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # You should process the error returned in the json
         message = "Error from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
+        )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_response(self, r, action_result):
 
         # store the r_text in debug data, it will get dumped in the logs if the action fails
-        if hasattr(action_result, 'add_debug_data'):
-            action_result.add_debug_data({'r_status_code': r.status_code})
-            action_result.add_debug_data({'r_text': r.text})
-            action_result.add_debug_data({'r_headers': r.headers})
+        if hasattr(action_result, "add_debug_data"):
+            action_result.add_debug_data({"r_status_code": r.status_code})
+            action_result.add_debug_data({"r_text": r.text})
+            action_result.add_debug_data({"r_headers": r.headers})
 
         # Process each 'Content-Type' of response separately
 
         # Process a json response
-        if 'json' in r.headers.get('Content-Type', ''):
+        if "json" in r.headers.get("Content-Type", ""):
             return self._process_json_response(r, action_result)
 
         # Process an HTML resonse, Do this no matter what the api talks.
         # There is a high chance of a PROXY in between phantom and the rest of
         # world, in case of errors, PROXY's return HTML, this function parses
         # the error and adds it to the action_result.
-        if 'html' in r.headers.get('Content-Type', ''):
+        if "html" in r.headers.get("Content-Type", ""):
             return self._process_html_response(r, action_result)
 
         # it's not content-type that is to be parsed, handle an empty response
@@ -143,18 +148,30 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
+        )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_rest_call(self, action_result, endpoint, headers=None, params=None, data=None, method="get"):
+    def _make_rest_call(
+        self,
+        action_result,
+        endpoint,
+        headers=None,
+        params=None,
+        data=None,
+        method="get",
+    ):
 
         resp_json = None
 
         try:
             request_func = getattr(requests, method)
         except AttributeError:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)),
+                resp_json
+            )
 
         # Create a URL to connect to
         url = self._base_url + endpoint
@@ -167,9 +184,13 @@ class InsightVMConnector(phantom.BaseConnector):
                 json=data,
                 headers=headers,
                 params=params,
-                verify=self._verify)
+                verify=self._verify,
+            )
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))), resp_json)
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))),
+                resp_json
+            )
 
         return self._process_response(r, action_result)
 
@@ -210,7 +231,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        endpoint = '/administration/info'
+        endpoint = "/administration/info"
 
         ret_val, resp_data = self._make_rest_call(action_result, endpoint, {})
 
@@ -218,7 +239,7 @@ class InsightVMConnector(phantom.BaseConnector):
             self.save_progress("Test Connectivity Failed.")
             return action_result.get_status()
 
-        version = resp_data.get('version', {}).get('semantic', 'Unknown')
+        version = resp_data.get("version", {}).get("semantic", "Unknown")
 
         self.save_progress("Detected InsightVM version {0}".format(version))
 
@@ -233,14 +254,14 @@ class InsightVMConnector(phantom.BaseConnector):
             return False
 
         for site in sites:
-            if site.get('id') == site_id:
+            if site.get("id") == site_id:
                 return True
 
         return False
 
     def _get_sites(self, action_result):
 
-        endpoint = '/sites'
+        endpoint = "/sites"
 
         resp_data = self._paginator(action_result, endpoint, {})
 
@@ -258,7 +279,7 @@ class InsightVMConnector(phantom.BaseConnector):
         for site in sites:
             action_result.add_data(site)
 
-        action_result.set_summary({'num_sites': len(sites)})
+        action_result.set_summary({"num_sites": len(sites)})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -273,7 +294,13 @@ class InsightVMConnector(phantom.BaseConnector):
 
         action_result.add_data(sites)
 
-        action_result.set_summary({'num_sites': len(sites.get('siteListingResponse', {}).get('siteSummary', []))})
+        action_result.set_summary(
+            {
+                "num_sites": len(
+                    sites.get("siteListingResponse", {}).get("siteSummary", [])
+                )
+            }
+        )
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -282,29 +309,30 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        if not self._check_for_site(action_result, config['site']):
+        if not self._check_for_site(action_result, config["site"]):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
-        endpoint = '/sites/{}/scans'.format(config['site'])
+        endpoint = "/sites/{}/scans".format(config["site"])
 
         ret_val, resp_data = self._make_rest_call(action_result, endpoint)
 
         count = 0
         max_containers = 0
-        last_time = self._state.get('last_time', 0)
+        last_time = self._state.get("last_time", 0)
 
         if not self.is_poll_now():
-            self._state['last_time'] = time.time()
+            self._state["last_time"] = time.time()
         else:
-            max_containers = param.get('container_count', consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
+            max_containers = param.get("container_count", consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
 
-        scan_data = dict(resp_data).get('resources', [])
+        scan_data = dict(resp_data).get("resources", [])
 
         if isinstance(scan_data, dict):
             scan_data = [scan_data]
 
         for scan in scan_data:
-            if scan['status'] != 'finished':
+            self.save_progress("Ingesting scan id: {}".format(scan["id"]))
+            if scan["status"] != "finished":
                 continue
 
             if self.is_poll_now():
@@ -313,16 +341,16 @@ class InsightVMConnector(phantom.BaseConnector):
                 count += 1
 
             else:
-                finished_datetime = datetime.strptime(scan['endTime'], "%Y-%m-%dT%H:%M:%S.%fZ")
+                finished_datetime = datetime.strptime(scan["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
                 finished_epoch = (finished_datetime - datetime.utcfromtimestamp(0)).total_seconds()
                 if finished_epoch < last_time:
                     continue
 
             container = {
-                'name': "Scan ID {0}".format(scan['id']),
-                'source_data_identifier': scan['id'],
-                'label': config.get('ingest', {}).get('container_label'),
-                'description': 'Scan {0} for Site {1}'.format(scan['id'], config['site'])
+                "name": "Scan ID {0}".format(scan["id"]),
+                "source_data_identifier": scan["id"],
+                "label": config.get("ingest", {}).get("container_label"),
+                "description": "Scan {0} for Site {1}".format(scan["id"], config["site"]),
             }
 
             ret_val, message, container_id = self.save_container(container)
@@ -331,15 +359,13 @@ class InsightVMConnector(phantom.BaseConnector):
                 continue
 
             scan_artifact = {
-                'cef': scan.get('vulnerabilities'),
-                'type': 'scan',
-                'label': 'scan',
-                'name': 'Scan Artifact',
-                'container_id': container_id,
-                'source_data_identifier': scan['id'],
-                'cef_types': {
-                    'scanId': ['insightvm scan id']
-                }
+                "cef": scan.get("vulnerabilities"),
+                "type": "scan",
+                "label": "scan",
+                "name": "Scan Artifact",
+                "container_id": container_id,
+                "source_data_identifier": scan["id"],
+                "cef_types": {"scanId": ["insightvm scan id"]},
             }
 
             ret_val, message, artifact_id = self.save_artifact(scan_artifact)
@@ -381,9 +407,9 @@ def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -394,28 +420,37 @@ def main():
     if username is not None and password is None:
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
     if username and password:
         try:
-            login_url = InsightVMConnector._get_phantom_base_url() + '/login'
+            login_url = InsightVMConnector._get_phantom_base_url() + "/login"
 
             print("Accessing the Login page")
-            r = requests.get(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True)
-            csrftoken = r.cookies['csrftoken']
+            r = requests.get(
+                login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True
+            )
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = login_url
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(login_url, verify=True, data=data, headers=headers, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT)
-            session_id = r2.cookies['sessionid']
+            r2 = requests.post(
+                login_url,
+                verify=True,
+                data=data,
+                headers=headers,
+                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT,
+            )
+            session_id = r2.cookies["sessionid"]
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))
             exit(1)
@@ -429,13 +464,13 @@ def main():
         connector.print_progress_message = True
 
         if session_id is not None:
-            in_json['user_session_token'] = session_id
-            connector._set_csrf_info(csrftoken, headers['Referer'])
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
