@@ -7,7 +7,7 @@
     "type": "information",
     "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "main_module": "insightvm_connector.py",
-    "app_version": "2.0.6",
+    "app_version": "3.0.0",
     "utctime_updated": "2022-02-03T21:15:02.000000Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
@@ -137,29 +137,23 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.description",
+                    "data_path": "action_result.data.*.description",
                     "data_type": "string"
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.id",
+                    "data_path": "action_result.data.*.id",
                     "data_type": "string",
                     "column_name": "ID",
                     "column_order": 0
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.name",
+                    "data_path": "action_result.data.*.name",
                     "data_type": "string",
                     "column_name": "Name",
                     "column_order": 1
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskfactor",
-                    "data_type": "string",
-                    "column_name": "Risk Factor",
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.data.*.siteListingResponse.siteSummary.*.riskscore",
+                    "data_path": "action_result.data.*.riskScore",
                     "data_type": "string",
                     "column_name": "Risk Score",
                     "column_order": 2
@@ -228,6 +222,34 @@
                     "data_type": "numeric",
                     "description": "Parameter ignored in this app"
                 }
+            },
+            "output": [],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "find assets",
+            "description": "Find assets on the InsightVM instance",
+            "type": "investigate",
+            "identifier": "find_assets",
+            "read_only": true,
+            "parameters": {
+                "match": {
+                    "data_type": "string",
+                    "description": "Operator to determine how to match filters.",
+                    "order": 0,
+                    "value_list": [
+                        "all",
+                        "any"
+                    ],
+                    "required": true,
+                    "default": "all"
+                }
+            },
+            "render": {
+                "type": "table",
+                "width": 12,
+                "height": 5,
+                "title": "Assets"
             },
             "output": [],
             "versions": "EQ(*)"
