@@ -194,19 +194,19 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return self._process_response(r, action_result)
 
-    def _paginator(self, endpoint, action_result, payload=None, limit=None):
+    def _paginator(self, action_result, endpoint, headers=None, params=None, data=None, method="get", limit=None):
 
         items_list = list()
 
-        if not payload:
-            payload = {}
+        if not params:
+            params = {}
 
         page = 0
-        payload["size"] = consts.DEFAULT_MAX_RESULTS
-        payload["page"] = page
+        params["size"] = consts.DEFAULT_MAX_RESULTS
+        params["page"] = page
 
         while True:
-            ret_val, items = self._make_rest_call(endpoint, action_result, params=payload)
+            ret_val, items = self._make_rest_call(action_result, endpoint, headers=headers, params=params, data=data, method=method)
 
             if phantom.is_fail(ret_val):
                 return None
@@ -223,7 +223,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 break
 
             page += 1
-            payload["page"] = page
+            params["page"] = page
 
         return items_list
 
@@ -263,7 +263,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         endpoint = "/sites"
 
-        resp_data = self._paginator(action_result, endpoint, {})
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
 
         return resp_data
 
@@ -287,20 +287,22 @@ class InsightVMConnector(phantom.BaseConnector):
 
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        sites = self._get_sites(action_result)
+        endpoint = "/assets/search"
 
-        if sites is None:
+        payload = {
+            'filters': json.loads(param['filters']),
+            'match': param['match']
+        }
+
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint, data=payload, method='post')
+
+        if resp_data is None:
             return phantom.APP_ERROR
 
-        action_result.add_data(sites)
+        for asset in resp_data:
+            action_result.add_data(asset)
 
-        action_result.set_summary(
-            {
-                "num_sites": len(
-                    sites.get("siteListingResponse", {}).get("siteSummary", [])
-                )
-            }
-        )
+        action_result.set_summary({"num_assets": len(resp_data)})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 

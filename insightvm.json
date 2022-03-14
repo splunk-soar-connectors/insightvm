@@ -137,29 +137,125 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.assets",
+                    "data_type": "numeric",
+                    "example_values": [
+                        10
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.description",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "test purpose"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.id",
-                    "data_type": "string",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ],
                     "column_name": "ID",
                     "column_order": 0
                 },
                 {
+                    "data_path": "action_result.data.*.importance",
+                    "data_type": "string",
+                    "example_values": [
+                        "normal"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.lastScanTime",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-03-10T11:25:57.910Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.href",
+                    "data_type": "string",
+                    "example_values": [
+                        "https://help.rapid7.com/api/3/sites/1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.rel",
+                    "data_type": "string",
+                    "example_values": [
+                        "self"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.name",
                     "data_type": "string",
+                    "example_values": [
+                        "Test"
+                    ],
                     "column_name": "Name",
                     "column_order": 1
                 },
                 {
                     "data_path": "action_result.data.*.riskScore",
-                    "data_type": "string",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1199460
+                    ],
                     "column_name": "Risk Score",
                     "column_order": 2
                 },
                 {
-                    "data_path": "action_result.data.*.siteListingResponse.success",
+                    "data_path": "action_result.data.*.scanEngine",
+                    "data_type": "numeric",
+                    "example_values": [
+                        3
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.scanTemplate",
+                    "data_type": "string",
+                    "example_values": [
+                        "full-audit-without-web-spider"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "static"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.critical",
+                    "data_type": "numeric",
+                    "example_values": [
+                        360
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.moderate",
+                    "data_type": "numeric",
+                    "example_values": [
+                        617
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.severe",
+                    "data_type": "numeric",
+                    "example_values": [
+                        3060
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.total",
+                    "data_type": "numeric",
+                    "example_values": [
+                        4037
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary",
                     "data_type": "string"
                 },
                 {
@@ -233,10 +329,16 @@
             "identifier": "find_assets",
             "read_only": true,
             "parameters": {
+                "filters": {
+                    "data_type": "string",
+                    "description": "Filters used to match assets",
+                    "order": 0,
+                    "required": true
+                },
                 "match": {
                     "data_type": "string",
-                    "description": "Operator to determine how to match filters.",
-                    "order": 0,
+                    "description": "Operator to determine how to match filters",
+                    "order": 1,
                     "value_list": [
                         "all",
                         "any"
@@ -251,7 +353,481 @@
                 "height": 5,
                 "title": "Assets"
             },
-            "output": [],
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.filters",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.parameter.match",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.addresses.*.ip",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.1.10.10"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.addresses.*.mac",
+                    "data_type": "string",
+                    "example_values": [
+                        "00:00:00:AA:BB:CC"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assessedForPolicies",
+                    "data_type": "boolean",
+                    "example_values": [
+                        false
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.assessedForVulnerabilities",
+                    "data_type": "boolean",
+                    "example_values": [
+                        true
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.history.*.date",
+                    "data_type": "string",
+                    "example_values": [
+                        "2021-07-13T06:45:21.183Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.history.*.scanId",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.history.*.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "SCAN"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.history.*.version",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.hostName",
+                    "data_type": "string",
+                    "example_values": [
+                        "10sh01"
+                    ],
+                    "column_name": "Host Name",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.hostNames.*.name",
+                    "data_type": "string",
+                    "example_values": [
+                        "10sh01"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.hostNames.*.source",
+                    "data_type": "string",
+                    "example_values": [
+                        "other"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ],
+                    "column_name": "ID",
+                    "column_order": 0
+                },
+                {
+                    "data_path": "action_result.data.*.ids.*.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "422A85E2-2FC6-B3A7-E71E-595E7AAAAAAA"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.ids.*.source",
+                    "data_type": "string",
+                    "example_values": [
+                        "dmidecode"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.ip",
+                    "data_type": "string",
+                    "example_values": [
+                        "10.1.10.10"
+                    ],
+                    "column_name": "IP",
+                    "column_order": 2
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.href",
+                    "data_type": "string",
+                    "example_values": [
+                        "https://help.rapid7.com/api/3/assets/1"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.rel",
+                    "data_type": "string",
+                    "example_values": [
+                        "self"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.mac",
+                    "data_type": "string",
+                    "example_values": [
+                        "00:00:00:AA:AB:AA"
+                    ],
+                    "column_name": "MAC",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.data.*.os",
+                    "data_type": "string",
+                    "example_values": [
+                        "CentOS Linux 7.6.1810"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.architecture",
+                    "data_type": "string",
+                    "example_values": [
+                        "x86_64"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.description",
+                    "data_type": "string",
+                    "example_values": [
+                        "CentOS Linux 7.6.1810"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.family",
+                    "data_type": "string",
+                    "example_values": [
+                        "Linux"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.id",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.product",
+                    "data_type": "string",
+                    "example_values": [
+                        "Linux"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.systemName",
+                    "data_type": "string",
+                    "example_values": [
+                        "CentOS Linux"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.vendor",
+                    "data_type": "string",
+                    "example_values": [
+                        "CentOS"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.osFingerprint.version",
+                    "data_type": "string",
+                    "example_values": [
+                        "7.6.1810"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.rawRiskScore",
+                    "data_type": "numeric",
+                    "example_values": [
+                        119945.9921875
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.riskScore",
+                    "data_type": "numeric",
+                    "example_values": [
+                        119945.9921875
+                    ],
+                    "column_name": "Risk Score",
+                    "column_order": 4
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.configurations.*.name",
+                    "data_type": "string",
+                    "example_values": [
+                        "ssh.algorithms.compression"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.configurations.*.value",
+                    "data_type": "string",
+                    "example_values": [
+                        "none,zlib@openssh.com"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.family",
+                    "data_type": "string",
+                    "example_values": [
+                        "OpenSSH"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.links.*.href",
+                    "data_type": "string",
+                    "example_values": [
+                        "https://help.rapid7.com/api/3/assets/1/services/tcp/22"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.links.*.rel",
+                    "data_type": "string",
+                    "example_values": [
+                        "self"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.name",
+                    "data_type": "string",
+                    "example_values": [
+                        "SSH"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.port",
+                    "data_type": "numeric",
+                    "example_values": [
+                        22
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.product",
+                    "data_type": "string",
+                    "example_values": [
+                        "OpenSSH"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.protocol",
+                    "data_type": "string",
+                    "example_values": [
+                        "tcp"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.vendor",
+                    "data_type": "string",
+                    "example_values": [
+                        "OpenBSD"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.services.*.version",
+                    "data_type": "string",
+                    "example_values": [
+                        "7.4"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.description",
+                    "data_type": "string",
+                    "example_values": [
+                        "Apache Log4j 1.2.17"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.family",
+                    "data_type": "string",
+                    "example_values": [
+                        "Java"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.id",
+                    "data_type": "numeric",
+                    "example_values": [
+                        496
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.product",
+                    "data_type": "string",
+                    "example_values": [
+                        "Log4j"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "Middleware"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.vendor",
+                    "data_type": "string",
+                    "example_values": [
+                        "Apache"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.software.*.version",
+                    "data_type": "string",
+                    "example_values": [
+                        "1.2.17"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "guest"
+                    ],
+                    "column_name": "Type",
+                    "column_oder": 2
+                },
+                {
+                    "data_path": "action_result.data.*.userGroups.*.id",
+                    "data_type": "numeric",
+                    "example_values": [
+                        173
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.userGroups.*.name",
+                    "data_type": "string",
+                    "example_values": [
+                        "abrt"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.users.*.fullName",
+                    "data_type": "string",
+                    "example_values": [
+                        "adm"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.users.*.id",
+                    "data_type": "numeric",
+                    "example_values": [
+                        173
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.users.*.name",
+                    "data_type": "string",
+                    "example_values": [
+                        "abrt"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.critical",
+                    "data_type": "numeric",
+                    "example_values": [
+                        36
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.exploits",
+                    "data_type": "numeric",
+                    "example_values": [
+                        20
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.malwareKits",
+                    "data_type": "numeric",
+                    "example_values": [
+                        0
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.moderate",
+                    "data_type": "numeric",
+                    "example_values": [
+                        62
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.severe",
+                    "data_type": "numeric",
+                    "example_values": [
+                        306
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.vulnerabilities.total",
+                    "data_type": "numeric",
+                    "example_values": [
+                        404
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary.num_assets",
+                    "data_type": "numeric",
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Num assets: 2"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
             "versions": "EQ(*)"
         }
     ],
