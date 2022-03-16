@@ -162,7 +162,7 @@ class InsightVMConnector(phantom.BaseConnector):
         data=None,
         method="get",
     ):
-
+        self.debug_print("Making rest call for: {}".format(self.get_action_identifier()))
         resp_json = None
 
         try:
@@ -187,6 +187,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 verify=self._verify,
             )
         except Exception as e:
+            self.debug_print("Got exception: {}".format(e))
             return RetVal(
                 action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))),
                 resp_json
