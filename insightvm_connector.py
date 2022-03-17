@@ -244,6 +244,10 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self.save_progress("Detected InsightVM version {0}".format(version))
 
+        if not self._check_for_site(action_result, self.get_config()['site']):
+            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+
         self.save_progress(consts.INSIGHT_SUCCESS_TEST_CONNECTIVITY)
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -290,12 +294,18 @@ class InsightVMConnector(phantom.BaseConnector):
 
         endpoint = "/assets/search"
 
-        payload = {
-            'filters': json.loads(param['filters']),
-            'match': param['match']
-        }
+        try:
+            filters = json.loads(param["filters"])
+        except Exception as ex:
+            self.debug_print("Error parsing json: {}".format(ex))
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(str(ex))),
+                None
+            )
 
-        resp_data = self._paginator(action_result=action_result, endpoint=endpoint, data=payload, method='post')
+        payload = {"filters": filters, "match": param["match"]}
+
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint, data=payload, method="post")
 
         if resp_data is None:
             return phantom.APP_ERROR
