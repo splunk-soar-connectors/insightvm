@@ -364,11 +364,17 @@
                 },
                 {
                     "data_path": "action_result.parameter.filters",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "[{\"field\": \"risk-score\", \"operator\": \"is-less-than\", \"value\": 200000}]"
+                    ]
                 },
                 {
                     "data_path": "action_result.parameter.match",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "any"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.addresses.*.ip",
