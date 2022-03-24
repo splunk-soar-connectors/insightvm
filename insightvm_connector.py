@@ -216,7 +216,7 @@ class InsightVMConnector(phantom.BaseConnector):
             if phantom.is_fail(ret_val):
                 return None
 
-            items_list.extend(items.get("resources"))
+            items_list.extend(items.get("resources", []))
 
             if limit and len(items_list) >= limit:
                 return items_list[:limit]
@@ -262,11 +262,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if sites is None:
             return False
 
-        for site in sites:
-            if site.get("id") == site_id:
-                return True
-
-        return False
+        return any(site.get("id") == site_id for site in sites)
 
     def _get_sites(self, action_result):
 
