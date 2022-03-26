@@ -2,13 +2,21 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 2\.0\.6  
+Connector Version: 3\.0\.0  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): "\.\*"  
 Minimum Product Version: 5\.1\.0  
 
 This app integrates with Rapid7 InsightVM \(formerly Nexpose\) to ingest scan data
+
+
+### Note:
+
+-   For version 3.0.0: artifacts ingested during 'on poll' have changed and data paths for the 'list
+    sites' action have also changed due to underlying API changes. Thus, It is recommended that
+    users update their playbooks accordingly.
+
 
 ### Configuration Variables
 The below configuration variables are required for this Connector to operate.  These variables are specified when configuring a InsightVM asset in SOAR.
@@ -26,6 +34,7 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 [test connectivity](#action-test-connectivity) - Checks authentication with the InsightVM instance  
 [list sites](#action-list-sites) - List all sites found on the InsightVM instance  
 [on poll](#action-on-poll) - Ingest scan data from InsightVM  
+[find assets](#action-find-assets) - Find assets on the InsightVM instance  
 
 ## action: 'test connectivity'
 Checks authentication with the InsightVM instance
@@ -52,12 +61,23 @@ No parameters are required for this action
 DATA PATH | TYPE | CONTAINS
 --------- | ---- | --------
 action\_result\.status | string | 
-action\_result\.data\.\*\.siteListingResponse\.siteSummary\.\*\.description | string | 
-action\_result\.data\.\*\.siteListingResponse\.siteSummary\.\*\.id | string | 
-action\_result\.data\.\*\.siteListingResponse\.siteSummary\.\*\.name | string | 
-action\_result\.data\.\*\.siteListingResponse\.siteSummary\.\*\.riskfactor | string | 
-action\_result\.data\.\*\.siteListingResponse\.siteSummary\.\*\.riskscore | string | 
-action\_result\.data\.\*\.siteListingResponse\.success | string | 
+action\_result\.data\.\*\.assets | numeric | 
+action\_result\.data\.\*\.description | string | 
+action\_result\.data\.\*\.id | numeric | 
+action\_result\.data\.\*\.importance | string | 
+action\_result\.data\.\*\.lastScanTime | string | 
+action\_result\.data\.\*\.links\.\*\.href | string | 
+action\_result\.data\.\*\.links\.\*\.rel | string | 
+action\_result\.data\.\*\.name | string | 
+action\_result\.data\.\*\.riskScore | numeric | 
+action\_result\.data\.\*\.scanEngine | numeric | 
+action\_result\.data\.\*\.scanTemplate | string | 
+action\_result\.data\.\*\.type | string | 
+action\_result\.data\.\*\.vulnerabilities\.critical | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.moderate | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.severe | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.total | numeric | 
+action\_result\.summary | string | 
 action\_result\.summary\.num\_sites | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
@@ -81,4 +101,87 @@ PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
 **artifact\_count** |  optional  | Parameter ignored in this app | numeric | 
 
 #### Action Output
-No Output
+No Output  
+
+## action: 'find assets'
+Find assets on the InsightVM instance
+
+Type: **investigate**  
+Read only: **True**
+
+#### Action Parameters
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**filters** |  required  | Filters used to match assets | string | 
+**match** |  required  | Operator to determine how to match filters | string | 
+
+#### Action Output
+DATA PATH | TYPE | CONTAINS
+--------- | ---- | --------
+action\_result\.status | string | 
+action\_result\.parameter\.filters | string | 
+action\_result\.parameter\.match | string | 
+action\_result\.data\.\*\.addresses\.\*\.ip | string | 
+action\_result\.data\.\*\.addresses\.\*\.mac | string | 
+action\_result\.data\.\*\.assessedForPolicies | boolean | 
+action\_result\.data\.\*\.assessedForVulnerabilities | boolean | 
+action\_result\.data\.\*\.history\.\*\.date | string | 
+action\_result\.data\.\*\.history\.\*\.scanId | numeric | 
+action\_result\.data\.\*\.history\.\*\.type | string | 
+action\_result\.data\.\*\.history\.\*\.version | numeric | 
+action\_result\.data\.\*\.hostName | string | 
+action\_result\.data\.\*\.hostNames\.\*\.name | string | 
+action\_result\.data\.\*\.hostNames\.\*\.source | string | 
+action\_result\.data\.\*\.id | numeric | 
+action\_result\.data\.\*\.ids\.\*\.id | string | 
+action\_result\.data\.\*\.ids\.\*\.source | string | 
+action\_result\.data\.\*\.ip | string | 
+action\_result\.data\.\*\.links\.\*\.href | string | 
+action\_result\.data\.\*\.links\.\*\.rel | string | 
+action\_result\.data\.\*\.mac | string | 
+action\_result\.data\.\*\.os | string | 
+action\_result\.data\.\*\.osFingerprint\.architecture | string | 
+action\_result\.data\.\*\.osFingerprint\.description | string | 
+action\_result\.data\.\*\.osFingerprint\.family | string | 
+action\_result\.data\.\*\.osFingerprint\.id | numeric | 
+action\_result\.data\.\*\.osFingerprint\.product | string | 
+action\_result\.data\.\*\.osFingerprint\.systemName | string | 
+action\_result\.data\.\*\.osFingerprint\.vendor | string | 
+action\_result\.data\.\*\.osFingerprint\.version | string | 
+action\_result\.data\.\*\.rawRiskScore | numeric | 
+action\_result\.data\.\*\.riskScore | numeric | 
+action\_result\.data\.\*\.services\.\*\.configurations\.\*\.name | string | 
+action\_result\.data\.\*\.services\.\*\.configurations\.\*\.value | string | 
+action\_result\.data\.\*\.services\.\*\.family | string | 
+action\_result\.data\.\*\.services\.\*\.links\.\*\.href | string | 
+action\_result\.data\.\*\.services\.\*\.links\.\*\.rel | string | 
+action\_result\.data\.\*\.services\.\*\.name | string | 
+action\_result\.data\.\*\.services\.\*\.port | numeric | 
+action\_result\.data\.\*\.services\.\*\.product | string | 
+action\_result\.data\.\*\.services\.\*\.protocol | string | 
+action\_result\.data\.\*\.services\.\*\.vendor | string | 
+action\_result\.data\.\*\.services\.\*\.version | string | 
+action\_result\.data\.\*\.software\.\*\.description | string | 
+action\_result\.data\.\*\.software\.\*\.family | string | 
+action\_result\.data\.\*\.software\.\*\.id | numeric | 
+action\_result\.data\.\*\.software\.\*\.product | string | 
+action\_result\.data\.\*\.software\.\*\.type | string | 
+action\_result\.data\.\*\.software\.\*\.vendor | string | 
+action\_result\.data\.\*\.software\.\*\.version | string | 
+action\_result\.data\.\*\.type | string | 
+action\_result\.data\.\*\.userGroups\.\*\.id | numeric | 
+action\_result\.data\.\*\.userGroups\.\*\.name | string | 
+action\_result\.data\.\*\.users\.\*\.fullName | string | 
+action\_result\.data\.\*\.users\.\*\.id | numeric | 
+action\_result\.data\.\*\.users\.\*\.name | string | 
+action\_result\.data\.\*\.vulnerabilities\.critical | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.exploits | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.malwareKits | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.moderate | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.severe | numeric | 
+action\_result\.data\.\*\.vulnerabilities\.total | numeric | 
+action\_result\.summary | string | 
+action\_result\.summary\.num\_assets | numeric | 
+action\_result\.message | string | 
+summary\.total\_objects | numeric | 
+summary\.total\_objects\_successful | numeric | 
