@@ -17,14 +17,11 @@
 import json
 import time
 from datetime import datetime
-from sys import exit
 
 import phantom.app as phantom
 import requests
-import xmltodict
 from bs4 import BeautifulSoup
-from defusedxml import ElementTree
-from lxml import etree
+from requests.auth import HTTPBasicAuth
 
 import insightvm_consts as consts
 
@@ -38,6 +35,7 @@ class RetVal(tuple):
 class InsightVMConnector(phantom.BaseConnector):
     ACTION_ID_ON_POLL = "on_poll"
     ACTION_ID_LIST_SITES = "list_sites"
+    ACTION_ID_FIND_ASSETS = "find_assets"
     ACTION_ID_TEST_CONNECTIVITY = "test_connectivity"
 
     def __init__(self):
@@ -48,14 +46,18 @@ class InsightVMConnector(phantom.BaseConnector):
         self._base_url = None
         self._session_id = None
         self._state = None
-        self._headers = {'Content-Type': 'application/xml'}
+        self._verify = None
+        self._username = None
+        self._password = None
 
     def initialize(self):
 
         config = self.get_config()
 
         self._base_url = consts.INSIGHTVM_API_URL.format(config[phantom.APP_JSON_DEVICE], config[phantom.APP_JSON_PORT])
-
+        self._verify = config.get("verify_server_cert", False)
+        self._username = config["username"]
+        self._password = config["password"]
         self._state = self.load_state()
 
         return phantom.APP_SUCCESS
@@ -66,193 +68,183 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _login(self, action_result):
-
-        config = self.get_config()
-
-        endpoint = 'LoginRequest'
-
-        params = {'user-id': config[phantom.APP_JSON_USERNAME], 'password': config[phantom.APP_JSON_PASSWORD]}
-
-        ret_val, resp_data = self._make_soap_call(action_result, endpoint, params)
-
-        if not ret_val:
-            return ret_val
-
-        self._session_id = dict(resp_data).get('LoginResponse', {}).get('@session-id')
-
-        if not self._session_id:
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_NO_SESSION_ID)
-
-        return phantom.APP_SUCCESS
-
-    def _process_request_exception(self, exception):
-
-        addition = ''
-        e_str = str(exception)
-        if 'Max retries exceeded' in e_str:
-            addition = consts.INSIGHTVM_ERR_BAD_IP
-        elif 'bad handshake' in e_str or '_ssl.c:504' in e_str:
-            addition = consts.INSIGHTVM_ERR_BAD_CERT
-
-        if not addition:
-            return consts.INSIGHTVM_ERR_SERVER_CONNECTION.format(exception)
-
-        self.save_progress(consts.INSIGHTVM_ERR_SERVER_CONNECTION.format(exception))
-        return addition
-
     def _process_empty_reponse(self, response, action_result):
 
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"), None)
+        return RetVal(
+            action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"),
+            None
+        )
 
     def _process_html_response(self, response, action_result):
 
-        # An html response, is bound to be an error
+        # An html response, treat it like an error
         status_code = response.status_code
 
         try:
             soup = BeautifulSoup(response.text, "html.parser")
+
+            # Remove the script, style, footer and navigation part from the HTML message
+            for element in soup(["script", "style", "footer", "nav"]):
+                element.extract()
+
             error_text = soup.text
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
-        except:
+            error_text = "\n".join(split_lines)
+        except Exception:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code,
-                                                                      error_text)
+        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
 
-        message = message.replace('{', '{{').replace('}', '}}')
+        message = message.replace("{", "{{").replace("}", "}}")
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _process_xml_response(self, r, action_result, endpoint):
+    def _process_json_response(self, r, action_result):
 
-        # Try an xml parse
+        # Try a json parse
         try:
-            resp_xml = ElementTree.fromstring(r.content)
-            resp_json = json.loads(json.dumps(xmltodict.parse(ElementTree.tostring(resp_xml))))
+            resp_json = r.json()
         except Exception as e:
-            return action_result.set_status(phantom.APP_ERROR, "{0}: {1}".format(consts.INSIGHTVM_ERR_PARSE_XML, e)), None
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))),
+                None
+            )
 
-        if r.status_code != 200:
-            action_result.add_data(resp_json)
-            message = r.text.replace('{', '{{').replace('}', '}}')
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(
-                r.status_code, message)), resp_json)
-
-        resp_str = endpoint.replace('Request', 'Response')
-
-        if int(resp_json.get(resp_str, {}).get('@success', '0')):
+        # Please specify the status codes here
+        if 200 <= r.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
-        xml_root = resp_json.get(resp_str)
-        if not xml_root:
-            xml_root = resp_json.get('XMLResponse', {})
+        # You should process the error returned in the json
+        message = "Error from server. Status Code: {0} Data from server: {1}".format(
+            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
+        )
 
-        message = xml_root.get('Failure', {}).get('Exception', {}).get('message')
-        if not message:
-            message = r.text.replace('{', '{{').replace('}', '}}')
-        elif message == consts.INSIGHTVM_ERR_NEED_AUTH:
-            message = consts.INSIGHTVM_ERR_BAD_CREDS
+        return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-        action_result.add_data(resp_json)
-        return RetVal(action_result.set_status(phantom.APP_ERROR, "Error from server, Status Code: {0} data returned: {1}".format(
-            r.status_code, message)), resp_json)
+    def _process_response(self, r, action_result):
 
-    def _process_response(self, r, action_result, endpoint):
+        # store the r_text in debug data, it will get dumped in the logs if the action fails
+        if hasattr(action_result, "add_debug_data"):
+            action_result.add_debug_data({"r_status_code": r.status_code})
+            action_result.add_debug_data({"r_text": r.text})
+            action_result.add_debug_data({"r_headers": r.headers})
 
-        # store the r_text in debug data, it will get dumped in the logs if an error occurs
-        if hasattr(action_result, 'add_debug_data'):
-            if r is not None:
-                action_result.add_debug_data({'r_status_code': r.status_code})
-                action_result.add_debug_data({'r_text': r.text})
-                action_result.add_debug_data({'r_headers': r.headers})
-            else:
-                action_result.add_debug_data({'r_text': 'r is None'})
-                return RetVal(action_result.set_status(phantom.APP_ERROR, "Got no response from InsightVM instance"), None)
+        # Process each 'Content-Type' of response separately
 
-        # There are just too many differences in the response to handle all of them in the same function
-        if 'xml' in r.headers.get('Content-Type', ''):
-            return self._process_xml_response(r, action_result, endpoint)
+        # Process a json response
+        if "json" in r.headers.get("Content-Type", ""):
+            return self._process_json_response(r, action_result)
 
-        if 'html' in r.headers.get('Content-Type', ''):
+        # Process an HTML resonse, Do this no matter what the api talks.
+        # There is a high chance of a PROXY in between phantom and the rest of
+        # world, in case of errors, PROXY's return HTML, this function parses
+        # the error and adds it to the action_result.
+        if "html" in r.headers.get("Content-Type", ""):
             return self._process_html_response(r, action_result)
 
-        # it's not an html or json, handle if it is a successfull empty reponse
+        # it's not content-type that is to be parsed, handle an empty response
         if not r.text:
             return self._process_empty_reponse(r, action_result)
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code, r.text.replace('{', '{{').replace('}', '}}'))
+            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
+        )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
-    def _make_soap_call(self, action_result, endpoint, param_dict):
-
-        config = self.get_config()
-
-        root = etree.Element(endpoint)
-
-        for k, v in param_dict.items():
-            root.set(k, v)
-
-        if endpoint != 'LoginRequest':
-            root.set('session-id', self._session_id)
+    def _make_rest_call(
+        self,
+        action_result,
+        endpoint,
+        headers=None,
+        params=None,
+        data=None,
+        method="get",
+    ):
+        self.debug_print("Making rest call for: {}".format(self.get_action_identifier()))
+        resp_json = None
 
         try:
-            response = requests.post(self._base_url, data=ElementTree.tostring(root), headers=self._headers,
-                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=config.get(phantom.APP_JSON_VERIFY, False))
+            request_func = getattr(requests, method)
+        except AttributeError:
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)),
+                resp_json
+            )
+
+        # Create a URL to connect to
+        url = self._base_url + endpoint
+        self._auth = HTTPBasicAuth(self._username, self._password)
+
+        try:
+            r = request_func(
+                url,
+                auth=self._auth,
+                json=data,
+                headers=headers,
+                params=params,
+                verify=self._verify,
+            )
         except Exception as e:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, self._process_request_exception(e)), None)
+            self.debug_print("Got exception: {}".format(e))
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))),
+                resp_json
+            )
 
-        return self._process_response(response, action_result, endpoint)
+        return self._process_response(r, action_result)
 
-    def _response_stripper(self, strippee, ret_dict):
+    def _paginator(self, action_result, endpoint, headers=None, params=None, data=None, method="get", limit=None):
 
-        for k, v in strippee.items():
+        items_list = list()
 
-            k = k.replace('@', '')
-            if '-' in k:
-                k = k.replace('-', ' ')
-                k = k.title()
-            k = k.replace(' ', '')
-            k = k[0].lower() + k[1:]
+        if not params:
+            params = {}
 
-            if type(v) == dict:
-                ret_dict[k] = {}
-                self._response_stripper(v, ret_dict[k])
+        page = 0
+        params["size"] = consts.DEFAULT_MAX_RESULTS
+        params["page"] = page
 
-            elif type(v) == list:
-                ret_dict[k] = []
-                for i in v:
-                    new_dict = {}
-                    self._response_stripper(i, new_dict)
-                    ret_dict[k].append(new_dict)
+        while True:
+            ret_val, items = self._make_rest_call(action_result, endpoint, headers=headers, params=params, data=data, method=method)
 
-            else:
-                ret_dict[k] = v
+            if phantom.is_fail(ret_val):
+                return None
+
+            items_list.extend(items.get("resources", []))
+
+            if limit and len(items_list) >= limit:
+                return items_list[:limit]
+
+            if len(items.get("resources")) < consts.DEFAULT_MAX_RESULTS:
+                break
+
+            if len(items_list) == items.get("page").get("totalResources"):
+                break
+
+            page += 1
+            params["page"] = page
+
+        return items_list
 
     def _test_connectivity(self, param):
 
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        if not self._login(action_result):
-            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
+        endpoint = "/administration/info"
+
+        ret_val, resp_data = self._make_rest_call(action_result, endpoint, {})
+
+        if phantom.is_fail(ret_val):
+            self.save_progress("Test Connectivity Failed.")
             return action_result.get_status()
 
-        endpoint = 'SystemInformationRequest'
-
-        ret_val, resp_data = self._make_soap_call(action_result, endpoint, {})
-
-        version = 'Unknown'
-        for stat in dict(resp_data).get('SystemInformationResponse', {}).get('StatisticsInformationSummary', {}).get('Statistic', {}):
-            if stat['@name'] == 'nsc-version':
-                version = stat['#text']
+        version = resp_data.get("version", {}).get("semantic", "Unknown")
 
         self.save_progress("Detected InsightVM version {0}".format(version))
 
@@ -261,51 +253,67 @@ class InsightVMConnector(phantom.BaseConnector):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
         self.save_progress(consts.INSIGHT_SUCCESS_TEST_CONNECTIVITY)
-
         return action_result.set_status(phantom.APP_SUCCESS)
 
-    def _check_for_site(self, action_result, site):
+    def _check_for_site(self, action_result, site_id):
 
         sites = self._get_sites(action_result)
 
         if sites is None:
             return False
 
-        sites = [int(x.get('id')) for x in sites.get('siteListingResponse', {}).get('siteSummary', [])]
-
-        if int(site) not in sites:
-            return False
-        return True
+        return any(site.get("id") == site_id for site in sites)
 
     def _get_sites(self, action_result):
 
-        endpoint = 'SiteListingRequest'
+        endpoint = "/sites"
 
-        ret_val, resp_data = self._make_soap_call(action_result, endpoint, {})
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
 
-        if not ret_val:
-            return None
-
-        stripped_data = {}
-        self._response_stripper(resp_data, stripped_data)
-
-        return stripped_data
+        return resp_data
 
     def _list_sites(self, param):
 
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
-
-        if not self._login(action_result):
-            return action_result.get_status()
 
         sites = self._get_sites(action_result)
 
         if sites is None:
             return phantom.APP_ERROR
 
-        action_result.add_data(sites)
+        for site in sites:
+            action_result.add_data(site)
 
-        action_result.set_summary({'num_sites': len(sites.get('siteListingResponse', {}).get('siteSummary', []))})
+        action_result.set_summary({"num_sites": len(sites)})
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
+    def _find_assets(self, param):
+
+        action_result = self.add_action_result(phantom.ActionResult(dict(param)))
+
+        endpoint = "/assets/search"
+
+        try:
+            filters = json.loads(param["filters"])
+        except Exception as ex:
+            self.debug_print("Error parsing json: {}".format(ex))
+            return RetVal(
+                action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(str(ex))),
+                None
+            )
+
+        payload = {"filters": filters, "match": param["match"]}
+
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint, data=payload, method="post")
+
+        if resp_data is None:
+            return phantom.APP_ERROR
+
+        for asset in resp_data:
+            action_result.add_data(asset)
+
+        action_result.set_summary({"num_assets": len(resp_data)})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -314,33 +322,30 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        if not self._login(action_result):
-            return action_result.get_status()
-
-        if not self._check_for_site(action_result, config['site']):
+        if not self._check_for_site(action_result, config["site"]):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
-        endpoint = 'SiteScanHistoryRequest'
+        endpoint = "/sites/{}/scans".format(config["site"])
 
-        ret_val, resp_data = self._make_soap_call(action_result, endpoint, {'site-id': str(config['site'])})
+        ret_val, resp_data = self._make_rest_call(action_result, endpoint)
 
         count = 0
         max_containers = 0
-        last_time = self._state.get('last_time', 0)
+        last_time = self._state.get("last_time", 0)
 
         if not self.is_poll_now():
-            self._state['last_time'] = time.time()
+            self._state["last_time"] = time.time()
         else:
-            max_containers = param.get('container_count', consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
+            max_containers = param.get("container_count", consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
 
-        scan_data = dict(resp_data).get('SiteScanHistoryResponse', {}).get('ScanSummary', [])
+        scan_data = dict(resp_data).get("resources", [])
 
         if isinstance(scan_data, dict):
             scan_data = [scan_data]
 
         for scan in scan_data:
-
-            if scan['@status'] != 'finished':
+            self.save_progress("Ingesting scan id: {}".format(scan["id"]))
+            if scan["status"] != "finished":
                 continue
 
             if self.is_poll_now():
@@ -349,62 +354,39 @@ class InsightVMConnector(phantom.BaseConnector):
                 count += 1
 
             else:
-                finished_datetime = datetime.strptime(scan['@endTime'], "%Y%m%dT%H%M%S%f")
+                finished_datetime = datetime.strptime(scan["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
                 finished_epoch = (finished_datetime - datetime.utcfromtimestamp(0)).total_seconds()
                 if finished_epoch < last_time:
                     continue
 
-            container = {}
-            container['name'] = "Scan ID {0}".format(scan['@scan-id'])
-            container['source_data_identifier'] = scan['@scan-id']
-            container['label'] = config.get('ingest', {}).get('container_label')
-            container['description'] = 'Scan {0} for Site {1}'.format(scan['@scan-id'], scan['@site-id'])
+            container = {
+                "name": "Scan ID {0}".format(scan["id"]),
+                "source_data_identifier": scan["id"],
+                "label": config.get("ingest", {}).get("container_label"),
+                "description": "Scan {0} for Site {1}".format(scan["id"], config["site"]),
+            }
 
             ret_val, message, container_id = self.save_container(container)
 
             if not ret_val:
                 continue
 
-            scan_artifact = {}
-            scan_artifact['cef'] = {}
-            scan_artifact['type'] = 'scan'
-            scan_artifact['label'] = 'scan'
-            scan_artifact['name'] = 'Scan Artifact'
-            scan_artifact['container_id'] = container_id
-            scan_artifact['source_data_identifier'] = scan['@scan-id']
-            scan_artifact['cef_types'] = {'scanId': ['insightvm scan id']}
+            scan_artifact = {
+                "cef": scan.get("vulnerabilities"),
+                "type": "scan",
+                "label": "scan",
+                "name": "Scan Artifact",
+                "container_id": container_id,
+                "source_data_identifier": scan["id"],
+                "cef_types": {"scanId": ["insightvm scan id"]},
+            }
 
-            self._response_stripper(scan, scan_artifact['cef'])
+            ret_val, message, artifact_id = self.save_artifact(scan_artifact)
 
-            total = 0
-            artifacts = {}
-            for vuln in scan['vulnerabilities']:
-
-                if vuln['@status'] not in artifacts:
-
-                    artifact = {}
-                    artifacts[vuln['@status']] = artifact
-
-                    artifact['cef'] = {'total': 0}
-                    artifact['name'] = vuln['@status']
-                    artifact['type'] = 'vulnerability'
-                    artifact['label'] = 'vulnerability'
-                    artifact['container_id'] = container_id
-                    artifact['source_data_identifier'] = scan['@scan-id']
-
-                else:
-                    artifact = artifacts[vuln['@status']]
-
-                total += int(vuln['@count'])
-                artifact['cef']['total'] = int(artifact['cef']['total']) + int(vuln['@count'])
-
-                if vuln.get('@severity') is not None:
-                    artifact['cef']['sev{0}'.format(vuln['@severity'])] = vuln['@count']
-
-            ret_val, message, artifact_id = self.save_artifacts(list(artifacts.values()))
-
-            scan_artifact['cef']['vulnerabilities'] = str(total)
-            ret_val, message, artifact_id = self.save_artifact(list(scan_artifact))
+            if not ret_val:
+                self.save_progress("Failed to save artifact: {}".format(message))
+            else:
+                self.save_progress("Artifact saved with id: {}".format(artifact_id))
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
@@ -421,6 +403,8 @@ class InsightVMConnector(phantom.BaseConnector):
             ret_val = self._list_sites(param)
         elif action_id == self.ACTION_ID_ON_POLL:
             ret_val = self._on_poll(param)
+        elif action_id == self.ACTION_ID_FIND_ASSETS:
+            ret_val = self._find_assets(param)
         elif action_id == self.ACTION_ID_TEST_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
 
@@ -429,6 +413,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
 def main():
     import argparse
+    import sys
 
     import pudb
 
@@ -436,9 +421,9 @@ def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -449,31 +434,40 @@ def main():
     if username is not None and password is None:
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
     if username and password:
         try:
-            login_url = InsightVMConnector._get_phantom_base_url() + '/login'
+            login_url = InsightVMConnector._get_phantom_base_url() + "/login"
 
             print("Accessing the Login page")
-            r = requests.get(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True)
-            csrftoken = r.cookies['csrftoken']
+            r = requests.get(
+                login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True
+            )
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = login_url
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
 
             print("Logging into Platform to get the session id")
-            r2 = requests.post(login_url, verify=True, data=data, headers=headers, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT)
-            session_id = r2.cookies['sessionid']
+            r2 = requests.post(
+                login_url,
+                verify=True,
+                data=data,
+                headers=headers,
+                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT,
+            )
+            session_id = r2.cookies["sessionid"]
         except Exception as e:
             print("Unable to get session id from the platform. Error: {}".format(str(e)))
-            exit(1)
+            sys.exit(1)
 
     with open(args.input_test_json) as f:
         in_json = f.read()
@@ -484,13 +478,13 @@ def main():
         connector.print_progress_message = True
 
         if session_id is not None:
-            in_json['user_session_token'] = session_id
-            connector._set_csrf_info(csrftoken, headers['Referer'])
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
-    exit(0)
+    sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

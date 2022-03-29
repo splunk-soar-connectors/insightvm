@@ -25,8 +25,10 @@ INSIGHTVM_ERR_BAD_CERT = "This error usually indicates that the certificate on t
 
 INSIGHT_SUCCESS_TEST_CONNECTIVITY = "Test Connectivity Passed"
 
-INSIGHTVM_API_URL = "https://{0}:{1}/api/1.1/xml"
+INSIGHTVM_API_URL = "https://{0}:{1}/api/3"
 
 INSIGHTVM_DEFAULT_CONTAINER_COUNT = 10
 
 INSIGHTVM_DEFAULT_TIMEOUT = 30
+
+DEFAULT_MAX_RESULTS = 10
