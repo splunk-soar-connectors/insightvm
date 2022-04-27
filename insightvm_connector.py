@@ -37,6 +37,7 @@ class InsightVMConnector(phantom.BaseConnector):
     ACTION_ID_LIST_SITES = "list_sites"
     ACTION_ID_FIND_ASSETS = "find_assets"
     ACTION_ID_TEST_CONNECTIVITY = "test_connectivity"
+    ACTION_ID_GET_ASSET_VULNERABILITIES = "get_asset_vulnerabilities"
 
     def __init__(self):
 
@@ -390,6 +391,23 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _get_asset_vulnerabilities(self, param):
+
+        action_result = self.add_action_result(phantom.ActionResult(dict(param)))
+
+        asset_id = param["asset_id"]
+
+        endpoint = f"/assets/{asset_id}/vulnerabilities"
+
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
+
+        for vuln in resp_data:
+            action_result.add_data(vuln)
+
+        action_result.set_summary({"num_vulnerabilities": len(resp_data)})
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def handle_action(self, param):
 
         ret_val = None
@@ -407,6 +425,8 @@ class InsightVMConnector(phantom.BaseConnector):
             ret_val = self._find_assets(param)
         elif action_id == self.ACTION_ID_TEST_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
+        elif action_id == self.ACTION_ID_GET_ASSET_VULNERABILITIES:
+            ret_val = self._get_asset_vulnerabilities(param)
 
         return ret_val
 

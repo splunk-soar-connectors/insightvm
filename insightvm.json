@@ -461,6 +461,9 @@
                     "example_values": [
                         1
                     ],
+                    "contains": [
+                        "insightvm asset id"
+                    ],
                     "column_name": "ID",
                     "column_order": 0
                 },
@@ -834,6 +837,80 @@
                     ]
                 }
             ],
+            "versions": "EQ(*)"
+        },
+        {
+            "action": "get asset vulnerabilities",
+            "identifier": "get_asset_vulnerabilities",
+            "description": "Get Asset Vulnerabilities",
+            "verbose": "Get vulnerabilities for a specific asset.",
+            "type": "generic",
+            "read_only": false,
+            "parameters": {
+                "asset_id": {
+                    "description": "Asset ID",
+                    "data_type": "string",
+                    "required": true,
+                    "contains": [
+                        "insightvm asset id"
+                    ],
+                    "default": "",
+                    "order": 0,
+                    "name": "asset_id"
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.parameter.asset_id",
+                    "data_type": "string",
+                    "column_name": "asset_id",
+                    "column_order": 0,
+                    "contains": [
+                        "insightvm asset id"
+                    ]
+                },
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "column_name": "status",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.instances",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.checkId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.status",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.summary",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric"
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric"
+                }
+            ],
+            "render": {
+                "type": "table"
+            },
             "versions": "EQ(*)"
         }
     ],
