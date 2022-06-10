@@ -7,12 +7,12 @@
     "type": "information",
     "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "main_module": "insightvm_connector.py",
-    "app_version": "3.0.0",
+    "app_version": "3.1.0",
     "utctime_updated": "2022-02-03T21:15:02.000000Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.1.0",
+    "min_phantom_version": "5.2.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
@@ -26,7 +26,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -50,11 +50,11 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -844,52 +844,133 @@
             "identifier": "get_asset_vulnerabilities",
             "description": "Get Asset Vulnerabilities",
             "verbose": "Get vulnerabilities for a specific asset.",
-            "type": "generic",
-            "read_only": false,
+            "type": "investigate",
+            "read_only": true,
             "parameters": {
                 "asset_id": {
                     "description": "Asset ID",
-                    "data_type": "string",
+                    "data_type": "numeric",
                     "required": true,
                     "contains": [
                         "insightvm asset id"
                     ],
-                    "default": "",
-                    "order": 0,
-                    "name": "asset_id"
+                    "primary": true,
+                    "order": 0
                 }
             },
             "output": [
                 {
-                    "data_path": "action_result.parameter.asset_id",
+                    "data_path": "action_result.status",
                     "data_type": "string",
-                    "column_name": "asset_id",
-                    "column_order": 0,
-                    "contains": [
-                        "insightvm asset id"
+                    "example_values": [
+                        "success",
+                        "failed"
                     ]
                 },
                 {
-                    "data_path": "action_result.status",
-                    "data_type": "string",
-                    "column_name": "status",
-                    "column_order": 1
+                    "data_path": "action_result.parameter.asset_id",
+                    "data_type": "numeric",
+                    "column_name": "Asset ID",
+                    "column_order": 0,
+                    "contains": [
+                        "insightvm asset id"
+                    ],
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.checkId",
+                    "data_type": "string"
                 },
                 {
                     "data_path": "action_result.data.*.id",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "column_name": "Vulnerability ID",
+                    "column_order": 1
                 },
                 {
                     "data_path": "action_result.data.*.instances",
-                    "data_type": "string"
-                },
-                {
-                    "data_path": "action_result.data.*.checkId",
-                    "data_type": "string"
+                    "data_type": "numeric",
+                    "column_name": "Instances",
+                    "column_order": 2,
+                    "example_values": [
+                        2
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 3
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.rel",
+                    "data_type": "string",
+                    "example_values": [
+                        "self"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.href",
                     "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "test-vulnerability"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.since",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-03-10T11:25:22.979Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.key",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.proof",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.since",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-03-10T11:25:22.979Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "vulnerable-version"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.port",
+                    "data_type": "numeric",
+                    "example_values": [
+                        22
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.protocol",
+                    "data_type": "string",
+                    "example_values": [
+                        "tcp"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.num_vulnerabilities",
+                    "data_type": "numeric",
+                    "example_values": [
+                        403
+                    ]
                 },
                 {
                     "data_path": "action_result.summary",
@@ -922,7 +1003,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -946,11 +1027,11 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
