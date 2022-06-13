@@ -455,13 +455,13 @@ class InsightVMConnector(phantom.BaseConnector):
 
         resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
 
-        if not resp_data:
+        if resp_data is None:
             return phantom.APP_ERROR
 
         for vuln in resp_data:
             action_result.add_data(vuln)
 
-        action_result.set_summary({"num_vulnerabilities": len(resp_data)})
+        action_result.set_summary({"number_of_vulnerabilities": len(resp_data)})
 
         return action_result.set_status(phantom.APP_SUCCESS)
 

@@ -1,7 +1,7 @@
 {
     "appid": "07ed44af-5de5-480a-90f5-5ea09a8077fb",
     "name": "InsightVM",
-    "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data",
+    "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions",
     "publisher": "Splunk",
     "package_name": "phantom_insightvm",
     "type": "information",
@@ -16,7 +16,7 @@
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "On prem, Version 6.6.93"
+        "On prem, Version 6.6.145"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -842,8 +842,7 @@
         {
             "action": "get asset vulnerabilities",
             "identifier": "get_asset_vulnerabilities",
-            "description": "Get Asset Vulnerabilities",
-            "verbose": "Get vulnerabilities for a specific asset.",
+            "description": "Get vulnerabilities for a specific asset",
             "type": "investigate",
             "read_only": true,
             "parameters": {
@@ -880,10 +879,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.results.*.checkId",
-                    "data_type": "string"
-                },
-                {
                     "data_path": "action_result.data.*.id",
                     "data_type": "string",
                     "column_name": "Vulnerability ID",
@@ -899,19 +894,6 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.status",
-                    "data_type": "string",
-                    "column_name": "Status",
-                    "column_order": 3
-                },
-                {
-                    "data_path": "action_result.data.*.links.*.rel",
-                    "data_type": "string",
-                    "example_values": [
-                        "self"
-                    ]
-                },
-                {
                     "data_path": "action_result.data.*.links.*.href",
                     "data_type": "string"
                 },
@@ -923,19 +905,43 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.since",
+                    "data_path": "action_result.data.*.links.*.rel",
                     "data_type": "string",
                     "example_values": [
-                        "2022-03-10T11:25:22.979Z"
+                        "self"
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.results.*.key",
+                    "data_path": "action_result.data.*.results.*.checkId",
                     "data_type": "string"
                 },
                 {
+                    "data_path": "action_result.data.*.results.*.key",
+                    "data_type": "string",
+                    "example_values": [
+                        "/lib/log4j-1.2.17.jar"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.port",
+                    "data_type": "numeric",
+                    "example_values": [
+                        22
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.results.*.proof",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "<p><p>Vulnerable software installed: Apache Log4j 1.2.17 (/lib/log4j-1.2.17.jar)</p></p>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.protocol",
+                    "data_type": "string",
+                    "example_values": [
+                        "tcp"
+                    ]
                 },
                 {
                     "data_path": "action_result.data.*.results.*.since",
@@ -952,41 +958,48 @@
                     ]
                 },
                 {
-                    "data_path": "action_result.data.*.results.*.port",
-                    "data_type": "numeric",
-                    "example_values": [
-                        22
-                    ]
-                },
-                {
-                    "data_path": "action_result.data.*.results.*.protocol",
+                    "data_path": "action_result.data.*.since",
                     "data_type": "string",
                     "example_values": [
-                        "tcp"
+                        "2022-03-10T11:25:22.979Z"
                     ]
                 },
                 {
-                    "data_path": "action_result.summary.num_vulnerabilities",
+                    "data_path": "action_result.data.*.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 3,
+                    "example_values": [
+                        "vulnerable"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.number_of_vulnerabilities",
                     "data_type": "numeric",
                     "example_values": [
                         403
                     ]
                 },
                 {
-                    "data_path": "action_result.summary",
-                    "data_type": "string"
-                },
-                {
                     "data_path": "action_result.message",
-                    "data_type": "string"
+                    "data_type": "string",
+                    "example_values": [
+                        "Number of vulnerabilities: 403"
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 },
                 {
                     "data_path": "summary.total_objects_successful",
-                    "data_type": "numeric"
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
                 }
             ],
             "render": {
