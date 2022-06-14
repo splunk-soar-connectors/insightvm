@@ -842,12 +842,12 @@
         {
             "action": "get asset vulnerabilities",
             "identifier": "get_asset_vulnerabilities",
-            "description": "Get vulnerabilities for a specific asset",
+            "description": "Retrieves all vulnerability findings on an asset",
             "type": "investigate",
             "read_only": true,
             "parameters": {
                 "asset_id": {
-                    "description": "Asset ID",
+                    "description": "The identifier of the asset",
                     "data_type": "numeric",
                     "required": true,
                     "contains": [

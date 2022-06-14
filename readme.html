@@ -15,26 +15,5 @@ and limitations under the License.
 <h3>Note:</h3>
 <ul>
     <li>For version 3.0.0: artifacts ingested during 'on poll' have changed and data paths for the 'list sites' action have also changed due to underlying API changes. Thus, It is recommended that users update their playbooks accordingly.</li>
+    <li>The app uses TCP port 3780(by default) for communicating with the InsightVM server.</li>
 </ul>
-
-<h2>Port Details</h2>
-<p>
-  The app uses HTTP/ HTTPS protocol for communicating with the InsightVM server. Below are the default ports used by the Splunk SOAR Connector.
-  <table>
-      <tr>
-          <th>Service Name</th>
-          <th>Transport Protocol</th>
-          <th>Port</th>
-      </tr>
-      <tr>
-          <td>http</td>
-          <td>tcp</td>
-          <td>80</td>
-      </tr>
-      <tr>
-          <td>https</td>
-          <td>tcp</td>
-          <td>443</td>
-      </tr>
-  </table>
-</p>
