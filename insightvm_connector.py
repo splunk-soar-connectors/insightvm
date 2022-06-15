@@ -219,9 +219,6 @@ class InsightVMConnector(phantom.BaseConnector):
                 verify=self._verify,
                 timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
-        except requests.exceptions.ConnectionError:
-            err_msg = "Error details: connection refused from the server {}".format(url)
-            return RetVal(action_result.set_status(phantom.APP_ERROR, err_msg), resp_json)
         except Exception as e:
             err_msg = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
             return RetVal(action_result.set_status(phantom.APP_ERROR, err_msg), resp_json)
