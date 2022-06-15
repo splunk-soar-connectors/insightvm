@@ -106,7 +106,7 @@
     "actions": [
         {
             "action": "test connectivity",
-            "description": "Checks authentication with the InsightVM instance",
+            "description": "Check authentication with the InsightVM instance",
             "type": "test",
             "identifier": "test_connectivity",
             "read_only": true,
@@ -842,7 +842,7 @@
         {
             "action": "get asset vulnerabilities",
             "identifier": "get_asset_vulnerabilities",
-            "description": "Retrieves all vulnerability findings on an asset",
+            "description": "Retrieve all vulnerability findings on an asset",
             "type": "investigate",
             "read_only": true,
             "parameters": {
@@ -1003,7 +1003,10 @@
                 }
             ],
             "render": {
-                "type": "table"
+                "type": "table",
+                "width": 12,
+                "height": 5,
+                "title": "Asset vulnerabilities"
             },
             "versions": "EQ(*)"
         }
