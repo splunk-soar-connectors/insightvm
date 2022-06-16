@@ -2,15 +2,28 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 3\.0\.0  
+Connector Version: 3\.1\.0  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.1\.0  
+Minimum Product Version: 5\.2\.0  
 
-This app integrates with Rapid7 InsightVM \(formerly Nexpose\) to ingest scan data
+This app integrates with Rapid7 InsightVM \(formerly Nexpose\) to ingest scan data and perform investigative actions
 
-
+[comment]: # " File: README.md"
+[comment]: # "  Copyright (c) 2017-2022 Splunk Inc."
+[comment]: # ""
+[comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
+[comment]: # "you may not use this file except in compliance with the License."
+[comment]: # "You may obtain a copy of the License at"
+[comment]: # ""
+[comment]: # "    http://www.apache.org/licenses/LICENSE-2.0"
+[comment]: # ""
+[comment]: # "Unless required by applicable law or agreed to in writing, software distributed under"
+[comment]: # "the License is distributed on an 'AS IS' BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,"
+[comment]: # "either express or implied. See the License for the specific language governing permissions"
+[comment]: # "and limitations under the License."
+[comment]: # ""
 ### Note:
 
 -   For version 3.0.0: artifacts ingested during 'on poll' have changed and data paths for the 'list
@@ -31,13 +44,14 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 **verify\_server\_cert** |  optional  | boolean | Verify server certificate
 
 ### Supported Actions  
-[test connectivity](#action-test-connectivity) - Checks authentication with the InsightVM instance  
+[test connectivity](#action-test-connectivity) - Check authentication with the InsightVM instance  
 [list sites](#action-list-sites) - List all sites found on the InsightVM instance  
 [on poll](#action-on-poll) - Ingest scan data from InsightVM  
 [find assets](#action-find-assets) - Find assets on the InsightVM instance  
+[get asset vulnerabilities](#action-get-asset-vulnerabilities) - Retrieve all vulnerability findings on an asset  
 
 ## action: 'test connectivity'
-Checks authentication with the InsightVM instance
+Check authentication with the InsightVM instance
 
 Type: **test**  
 Read only: **True**
@@ -132,7 +146,7 @@ action\_result\.data\.\*\.history\.\*\.version | numeric |
 action\_result\.data\.\*\.hostName | string | 
 action\_result\.data\.\*\.hostNames\.\*\.name | string | 
 action\_result\.data\.\*\.hostNames\.\*\.source | string | 
-action\_result\.data\.\*\.id | numeric | 
+action\_result\.data\.\*\.id | numeric |  `insightvm asset id` 
 action\_result\.data\.\*\.ids\.\*\.id | string | 
 action\_result\.data\.\*\.ids\.\*\.source | string | 
 action\_result\.data\.\*\.ip | string | 
@@ -182,6 +196,41 @@ action\_result\.data\.\*\.vulnerabilities\.severe | numeric |
 action\_result\.data\.\*\.vulnerabilities\.total | numeric | 
 action\_result\.summary | string | 
 action\_result\.summary\.num\_assets | numeric | 
+action\_result\.message | string | 
+summary\.total\_objects | numeric | 
+summary\.total\_objects\_successful | numeric |   
+
+## action: 'get asset vulnerabilities'
+Retrieve all vulnerability findings on an asset
+
+Type: **investigate**  
+Read only: **True**
+
+#### Action Parameters
+PARAMETER | REQUIRED | DESCRIPTION | TYPE | CONTAINS
+--------- | -------- | ----------- | ---- | --------
+**asset\_id** |  required  | The identifier of the asset | numeric |  `insightvm asset id` 
+
+#### Action Output
+DATA PATH | TYPE | CONTAINS
+--------- | ---- | --------
+action\_result\.status | string | 
+action\_result\.parameter\.asset\_id | numeric |  `insightvm asset id` 
+action\_result\.data\.\*\.id | string | 
+action\_result\.data\.\*\.instances | numeric | 
+action\_result\.data\.\*\.links\.\*\.href | string | 
+action\_result\.data\.\*\.links\.\*\.id | string | 
+action\_result\.data\.\*\.links\.\*\.rel | string | 
+action\_result\.data\.\*\.results\.\*\.checkId | string | 
+action\_result\.data\.\*\.results\.\*\.key | string | 
+action\_result\.data\.\*\.results\.\*\.port | numeric | 
+action\_result\.data\.\*\.results\.\*\.proof | string | 
+action\_result\.data\.\*\.results\.\*\.protocol | string | 
+action\_result\.data\.\*\.results\.\*\.since | string | 
+action\_result\.data\.\*\.results\.\*\.status | string | 
+action\_result\.data\.\*\.since | string | 
+action\_result\.data\.\*\.status | string | 
+action\_result\.summary\.number\_of\_vulnerabilities | numeric | 
 action\_result\.message | string | 
 summary\.total\_objects | numeric | 
 summary\.total\_objects\_successful | numeric | 
