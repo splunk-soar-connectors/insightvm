@@ -1,22 +1,22 @@
 {
     "appid": "07ed44af-5de5-480a-90f5-5ea09a8077fb",
     "name": "InsightVM",
-    "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data",
+    "description": "This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions",
     "publisher": "Splunk",
     "package_name": "phantom_insightvm",
     "type": "information",
     "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "main_module": "insightvm_connector.py",
-    "app_version": "3.0.0",
+    "app_version": "3.1.0",
     "utctime_updated": "2022-02-03T21:15:02.000000Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
     "product_version_regex": ".*",
-    "min_phantom_version": "5.1.0",
+    "min_phantom_version": "5.2.0",
     "python_version": "3",
     "fips_compliant": true,
     "latest_tested_versions": [
-        "On prem, Version 6.6.93"
+        "On prem, Version 6.6.145"
     ],
     "pip_dependencies": {
         "wheel": [
@@ -26,7 +26,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -50,11 +50,11 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -106,7 +106,7 @@
     "actions": [
         {
             "action": "test connectivity",
-            "description": "Checks authentication with the InsightVM instance",
+            "description": "Check authentication with the InsightVM instance",
             "type": "test",
             "identifier": "test_connectivity",
             "read_only": true,
@@ -460,6 +460,9 @@
                     "data_type": "numeric",
                     "example_values": [
                         1
+                    ],
+                    "contains": [
+                        "insightvm asset id"
                     ],
                     "column_name": "ID",
                     "column_order": 0
@@ -835,6 +838,177 @@
                 }
             ],
             "versions": "EQ(*)"
+        },
+        {
+            "action": "get asset vulnerabilities",
+            "identifier": "get_asset_vulnerabilities",
+            "description": "Retrieve all vulnerability findings on an asset",
+            "type": "investigate",
+            "read_only": true,
+            "parameters": {
+                "asset_id": {
+                    "description": "The identifier of the asset",
+                    "data_type": "numeric",
+                    "required": true,
+                    "contains": [
+                        "insightvm asset id"
+                    ],
+                    "primary": true,
+                    "order": 0
+                }
+            },
+            "output": [
+                {
+                    "data_path": "action_result.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "success",
+                        "failed"
+                    ]
+                },
+                {
+                    "data_path": "action_result.parameter.asset_id",
+                    "data_type": "numeric",
+                    "column_name": "Asset ID",
+                    "column_order": 0,
+                    "contains": [
+                        "insightvm asset id"
+                    ],
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.id",
+                    "data_type": "string",
+                    "column_name": "Vulnerability ID",
+                    "column_order": 1
+                },
+                {
+                    "data_path": "action_result.data.*.instances",
+                    "data_type": "numeric",
+                    "column_name": "Instances",
+                    "column_order": 2,
+                    "example_values": [
+                        2
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.href",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.id",
+                    "data_type": "string",
+                    "example_values": [
+                        "test-vulnerability"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.links.*.rel",
+                    "data_type": "string",
+                    "example_values": [
+                        "self"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.checkId",
+                    "data_type": "string"
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.key",
+                    "data_type": "string",
+                    "example_values": [
+                        "/lib/log4j-1.2.17.jar"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.port",
+                    "data_type": "numeric",
+                    "example_values": [
+                        22
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.proof",
+                    "data_type": "string",
+                    "example_values": [
+                        "<p><p>Vulnerable software installed: Apache Log4j 1.2.17 (/lib/log4j-1.2.17.jar)</p></p>"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.protocol",
+                    "data_type": "string",
+                    "example_values": [
+                        "tcp"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.since",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-03-10T11:25:22.979Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.results.*.status",
+                    "data_type": "string",
+                    "example_values": [
+                        "vulnerable-version"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.since",
+                    "data_type": "string",
+                    "example_values": [
+                        "2022-03-10T11:25:22.979Z"
+                    ]
+                },
+                {
+                    "data_path": "action_result.data.*.status",
+                    "data_type": "string",
+                    "column_name": "Status",
+                    "column_order": 3,
+                    "example_values": [
+                        "vulnerable"
+                    ]
+                },
+                {
+                    "data_path": "action_result.summary.number_of_vulnerabilities",
+                    "data_type": "numeric",
+                    "example_values": [
+                        403
+                    ]
+                },
+                {
+                    "data_path": "action_result.message",
+                    "data_type": "string",
+                    "example_values": [
+                        "Number of vulnerabilities: 403"
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                },
+                {
+                    "data_path": "summary.total_objects_successful",
+                    "data_type": "numeric",
+                    "example_values": [
+                        1
+                    ]
+                }
+            ],
+            "render": {
+                "type": "table",
+                "width": 12,
+                "height": 5,
+                "title": "Asset vulnerabilities"
+            },
+            "versions": "EQ(*)"
         }
     ],
     "pip39_dependencies": {
@@ -845,7 +1019,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/shared/certifi-2021.10.8-py2.py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -869,11 +1043,11 @@
             },
             {
                 "module": "soupsieve",
-                "input_file": "wheels/py3/soupsieve-2.3.1-py3-none-any.whl"
+                "input_file": "wheels/py3/soupsieve-2.3.2.post1-py3-none-any.whl"
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.8-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",

@@ -37,6 +37,7 @@ class InsightVMConnector(phantom.BaseConnector):
     ACTION_ID_LIST_SITES = "list_sites"
     ACTION_ID_FIND_ASSETS = "find_assets"
     ACTION_ID_TEST_CONNECTIVITY = "test_connectivity"
+    ACTION_ID_GET_ASSET_VULNERABILITIES = "get_asset_vulnerabilities"
 
     def __init__(self):
 
@@ -60,6 +61,10 @@ class InsightVMConnector(phantom.BaseConnector):
         self._password = config["password"]
         self._state = self.load_state()
 
+        if not isinstance(self._state, dict):
+            self.debug_print("Resetting the state file with the default format")
+            self._state = {"app_version": self.get_app_json().get("app_version")}
+
         return phantom.APP_SUCCESS
 
     def finalize(self):
@@ -68,13 +73,35 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return phantom.APP_SUCCESS
 
-    def _process_empty_reponse(self, response, action_result):
+    def _get_error_message_from_exception(self, e):
+        error_code = None
+        error_msg = consts.INSIGHTVM_ERR_MSG_UNAVAILABLE
+
+        try:
+            if hasattr(e, "args"):
+                if len(e.args) > 1:
+                    error_code = e.args[0]
+                    error_msg = e.args[1]
+                elif len(e.args) == 1:
+                    error_msg = e.args[0]
+        except Exception:
+            self.debug_print("Error occurred while fetching exception information")
+
+        if not error_code:
+            error_text = "Error Message: {}".format(error_msg)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_msg)
+
+        return error_text
+
+    def _process_empty_response(self, response, action_result):
 
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
         return RetVal(
-            action_result.set_status(phantom.APP_ERROR, "Empty response and no information in the header"),
+            action_result.set_status(phantom.APP_ERROR,
+            "Status code: {}. Empty response and no information in the header".format(response.status_code)),
             None
         )
 
@@ -109,8 +136,9 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             resp_json = r.json()
         except Exception as e:
+            err_msg = self._get_error_message_from_exception(e)
             return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))),
+                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(err_msg)),
                 None
             )
 
@@ -139,7 +167,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if "json" in r.headers.get("Content-Type", ""):
             return self._process_json_response(r, action_result)
 
-        # Process an HTML resonse, Do this no matter what the api talks.
+        # Process an HTML response, Do this no matter what the api talks.
         # There is a high chance of a PROXY in between phantom and the rest of
         # world, in case of errors, PROXY's return HTML, this function parses
         # the error and adds it to the action_result.
@@ -148,7 +176,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         # it's not content-type that is to be parsed, handle an empty response
         if not r.text:
-            return self._process_empty_reponse(r, action_result)
+            return self._process_empty_response(r, action_result)
 
         # everything else is actually an error at this point
         message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
@@ -178,7 +206,7 @@ class InsightVMConnector(phantom.BaseConnector):
             )
 
         # Create a URL to connect to
-        url = self._base_url + endpoint
+        url = "{}{}".format(self._base_url, endpoint)
         self._auth = HTTPBasicAuth(self._username, self._password)
 
         try:
@@ -189,13 +217,11 @@ class InsightVMConnector(phantom.BaseConnector):
                 headers=headers,
                 params=params,
                 verify=self._verify,
+                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
-            self.debug_print("Got exception: {}".format(e))
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))),
-                resp_json
-            )
+            err_msg = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
+            return RetVal(action_result.set_status(phantom.APP_ERROR, err_msg), resp_json)
 
         return self._process_response(r, action_result)
 
@@ -232,6 +258,24 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return items_list
 
+    def _validate_integer(self, action_result, parameter, key, allow_zero=False):
+        if parameter is not None:
+            try:
+                if not float(parameter).is_integer():
+                    return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+
+                parameter = int(parameter)
+            except Exception:
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+
+            if parameter < 0:
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_NEGATIVE_INTEGER_ERR_MSG.format(key)), None
+
+            if not allow_zero and parameter == 0:
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_ZERO_INTEGER_ERR_MSG.format(key)), None
+
+        return phantom.APP_SUCCESS, parameter
+
     def _test_connectivity(self, param):
 
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
@@ -241,7 +285,7 @@ class InsightVMConnector(phantom.BaseConnector):
         ret_val, resp_data = self._make_rest_call(action_result, endpoint, {})
 
         if phantom.is_fail(ret_val):
-            self.save_progress("Test Connectivity Failed.")
+            self.save_progress("Test connectivity failed")
             return action_result.get_status()
 
         version = resp_data.get("version", {}).get("semantic", "Unknown")
@@ -297,13 +341,16 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             filters = json.loads(param["filters"])
         except Exception as ex:
-            self.debug_print("Error parsing json: {}".format(ex))
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(str(ex))),
-                None
-            )
+            self.debug_print("Error parsing json: {}".format(str(ex)))
+            err_msg = self._get_error_message_from_exception(ex)
+            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(err_msg))
 
-        payload = {"filters": filters, "match": param["match"]}
+        match = param["match"]
+        if match not in consts.MATCH_LIST:
+            return action_result.set_status(phantom.APP_ERROR,
+                   "Please provide a value from {} in the 'match' parameter".format(consts.MATCH_LIST))
+
+        payload = {"filters": filters, "match": match}
 
         resp_data = self._paginator(action_result=action_result, endpoint=endpoint, data=payload, method="post")
 
@@ -322,10 +369,11 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
-        if not self._check_for_site(action_result, config["site"]):
+        site = config["site"]
+        if not self._check_for_site(action_result, site):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
 
-        endpoint = "/sites/{}/scans".format(config["site"])
+        endpoint = "/sites/{}/scans".format(site)
 
         ret_val, resp_data = self._make_rest_call(action_result, endpoint)
 
@@ -363,7 +411,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 "name": "Scan ID {0}".format(scan["id"]),
                 "source_data_identifier": scan["id"],
                 "label": config.get("ingest", {}).get("container_label"),
-                "description": "Scan {0} for Site {1}".format(scan["id"], config["site"]),
+                "description": "Scan {0} for Site {1}".format(scan["id"], site),
             }
 
             ret_val, message, container_id = self.save_container(container)
@@ -390,6 +438,30 @@ class InsightVMConnector(phantom.BaseConnector):
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
+    def _get_asset_vulnerabilities(self, param):
+
+        action_result = self.add_action_result(phantom.ActionResult(dict(param)))
+
+        asset_id = param["asset_id"]
+
+        status, asset_id = self._validate_integer(action_result, asset_id, "'asset_id'")
+        if phantom.is_fail(status):
+            return action_result.get_status()
+
+        endpoint = "/assets/{}/vulnerabilities".format(asset_id)
+
+        resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
+
+        if resp_data is None:
+            return phantom.APP_ERROR
+
+        for vuln in resp_data:
+            action_result.add_data(vuln)
+
+        action_result.set_summary({"number_of_vulnerabilities": len(resp_data)})
+
+        return action_result.set_status(phantom.APP_SUCCESS)
+
     def handle_action(self, param):
 
         ret_val = None
@@ -407,6 +479,8 @@ class InsightVMConnector(phantom.BaseConnector):
             ret_val = self._find_assets(param)
         elif action_id == self.ACTION_ID_TEST_CONNECTIVITY:
             ret_val = self._test_connectivity(param)
+        elif action_id == self.ACTION_ID_GET_ASSET_VULNERABILITIES:
+            ret_val = self._get_asset_vulnerabilities(param)
 
         return ret_val
 
