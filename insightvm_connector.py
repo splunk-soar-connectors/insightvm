@@ -429,7 +429,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 "cef_types": {"scanId": ["insightvm scan id"]},
             }
 
-            ret_val, message, artifact_id = self.save_artifact(scan_artifact)
+            ret_val, message, artifact_id = self.save_artifacts([scan_artifact])
 
             if not ret_val:
                 self.save_progress("Failed to save artifact: {}".format(message))

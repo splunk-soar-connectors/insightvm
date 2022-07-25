@@ -7,7 +7,7 @@
     "type": "information",
     "license": "Copyright (c) 2017-2022 Splunk Inc.",
     "main_module": "insightvm_connector.py",
-    "app_version": "3.1.0",
+    "app_version": "3.2.0",
     "utctime_updated": "2022-02-03T21:15:02.000000Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
@@ -26,7 +26,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.6.15-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -54,7 +54,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.10-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
@@ -563,6 +563,13 @@
                     ]
                 },
                 {
+                    "data_path": "action_result.data.*.osFingerprint.type",
+                    "data_type": "string",
+                    "example_values": [
+                        "General"
+                    ]
+                },
+                {
                     "data_path": "action_result.data.*.osFingerprint.vendor",
                     "data_type": "string",
                     "example_values": [
@@ -1019,7 +1026,7 @@
             },
             {
                 "module": "certifi",
-                "input_file": "wheels/py3/certifi-2022.5.18.1-py3-none-any.whl"
+                "input_file": "wheels/py3/certifi-2022.6.15-py3-none-any.whl"
             },
             {
                 "module": "chardet",
@@ -1047,7 +1054,7 @@
             },
             {
                 "module": "urllib3",
-                "input_file": "wheels/shared/urllib3-1.26.9-py2.py3-none-any.whl"
+                "input_file": "wheels/shared/urllib3-1.26.10-py2.py3-none-any.whl"
             },
             {
                 "module": "xmltodict",
