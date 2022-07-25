@@ -35,6 +35,7 @@ DEFAULT_MAX_RESULTS = 10
 
 MATCH_LIST = ["any", "all"]
 
+# Constants relating to "_get_error_message_from_exception"
 INSIGHTVM_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters"
 
 # Constants relating to "_validate_integer"
