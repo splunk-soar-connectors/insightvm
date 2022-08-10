@@ -2,11 +2,11 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 3\.1\.0  
+Connector Version: 3\.2\.0  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): "\.\*"  
-Minimum Product Version: 5\.2\.0  
+Minimum Product Version: 5\.3\.0  
 
 This app integrates with Rapid7 InsightVM \(formerly Nexpose\) to ingest scan data and perform investigative actions
 
@@ -160,6 +160,7 @@ action\_result\.data\.\*\.osFingerprint\.family | string |
 action\_result\.data\.\*\.osFingerprint\.id | numeric | 
 action\_result\.data\.\*\.osFingerprint\.product | string | 
 action\_result\.data\.\*\.osFingerprint\.systemName | string | 
+action\_result\.data\.\*\.osFingerprint\.type | string | 
 action\_result\.data\.\*\.osFingerprint\.vendor | string | 
 action\_result\.data\.\*\.osFingerprint\.version | string | 
 action\_result\.data\.\*\.rawRiskScore | numeric | 
