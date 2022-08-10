@@ -392,8 +392,8 @@ class InsightVMConnector(phantom.BaseConnector):
             scan_data = [scan_data]
 
         for scan in scan_data:
-            self.save_progress("Ingesting scan id: {}".format(scan["id"]))
             if scan["status"] != "finished":
+                self.save_progress("The scan for id: {} is not finished. Continuing with the next scan".format(scan["id"]))
                 continue
 
             if self.is_poll_now():
@@ -413,7 +413,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 "label": config.get("ingest", {}).get("container_label"),
                 "description": "Scan {0} for Site {1}".format(scan["id"], site),
             }
-
+            self.save_progress("Ingesting scan id: {}".format(scan["id"]))
             ret_val, message, container_id = self.save_container(container)
 
             if not ret_val:
@@ -429,7 +429,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 "cef_types": {"scanId": ["insightvm scan id"]},
             }
 
-            ret_val, message, artifact_id = self.save_artifact(scan_artifact)
+            ret_val, message, artifact_id = self.save_artifacts([scan_artifact])
 
             if not ret_val:
                 self.save_progress("Failed to save artifact: {}".format(message))
