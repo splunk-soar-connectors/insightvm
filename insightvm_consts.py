@@ -35,10 +35,10 @@ DEFAULT_MAX_RESULTS = 10
 
 MATCH_LIST = ["any", "all"]
 
-# Constants relating to "_get_error_message_from_exception"
+# Constants related to "_get_error_message_from_exception"
 INSIGHTVM_ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters"
 
-# Constants relating to "_validate_integer"
+# Constants related to "_validate_integer"
 INSIGHT_INVALID_INTEGER_ERR_MSG = "Please provide a valid integer value in the {} parameter"
 INSIGHT_NEGATIVE_INTEGER_ERR_MSG = "Please provide a valid non-negative integer value in the {} parameter"
 INSIGHT_ZERO_INTEGER_ERR_MSG = "Please provide a valid non-zero integer value in the {} parameter"
