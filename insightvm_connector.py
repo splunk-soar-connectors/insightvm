@@ -12,8 +12,6 @@
 # the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
-#
-#
 import json
 import time
 from datetime import datetime
@@ -88,7 +86,7 @@ class InsightVMConnector(phantom.BaseConnector):
             self.debug_print("Error occurred while fetching exception information")
 
         if not error_code:
-            error_text = "Error Message: {}".format(error_message
+            error_text = "Error Message: {}".format(error_message)
         else:
             error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
 
@@ -220,7 +218,7 @@ class InsightVMConnector(phantom.BaseConnector):
                 timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
-            error_mmessage = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
+            error_message = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
             return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), resp_json)
 
         return self._process_response(r, action_result)
