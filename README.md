@@ -6,7 +6,7 @@ Connector Version: 3.2.1
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 5.3.0  
+Minimum Product Version: 5.5.0  
 
 This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions
 
