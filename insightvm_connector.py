@@ -75,7 +75,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
     def _get_error_message_from_exception(self, e):
         error_code = None
-        error_msg = consts.INSIGHTVM_ERR_MSG_UNAVAILABLE
+        error_msg = consts.INSIGHTVM_ERROR_MSG_UNAVAILABLE
 
         try:
             if hasattr(e, "args"):
@@ -136,9 +136,9 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             resp_json = r.json()
         except Exception as e:
-            err_msg = self._get_error_message_from_exception(e)
+            error_msg = self._get_error_message_from_exception(e)
             return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(err_msg)),
+                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(error_msg)),
                 None
             )
 
@@ -220,8 +220,8 @@ class InsightVMConnector(phantom.BaseConnector):
                 timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
-            err_msg = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
-            return RetVal(action_result.set_status(phantom.APP_ERROR, err_msg), resp_json)
+            error_msg = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_msg), resp_json)
 
         return self._process_response(r, action_result)
 
@@ -262,17 +262,17 @@ class InsightVMConnector(phantom.BaseConnector):
         if parameter is not None:
             try:
                 if not float(parameter).is_integer():
-                    return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+                    return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERROR_MSG.format(key)), None
 
                 parameter = int(parameter)
             except Exception:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERROR_MSG.format(key)), None
 
             if parameter < 0:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_NEGATIVE_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_NEGATIVE_INTEGER_ERROR_MSG.format(key)), None
 
             if not allow_zero and parameter == 0:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_ZERO_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_ZERO_INTEGER_ERROR_MSG.format(key)), None
 
         return phantom.APP_SUCCESS, parameter
 
@@ -293,8 +293,8 @@ class InsightVMConnector(phantom.BaseConnector):
         self.save_progress("Detected InsightVM version {0}".format(version))
 
         if not self._check_for_site(action_result, self.get_config()['site']):
-            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+            self.save_progress(consts.INSIGHTVM_ERROR_TEST_CONNECTIVITY)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
         self.save_progress(consts.INSIGHT_SUCCESS_TEST_CONNECTIVITY)
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -342,8 +342,8 @@ class InsightVMConnector(phantom.BaseConnector):
             filters = json.loads(param["filters"])
         except Exception as ex:
             self.debug_print("Error parsing json: {}".format(str(ex)))
-            err_msg = self._get_error_message_from_exception(ex)
-            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(err_msg))
+            error_msg = self._get_error_message_from_exception(ex)
+            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(error_msg))
 
         match = param["match"]
         if match not in consts.MATCH_LIST:
@@ -371,7 +371,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         site = config["site"]
         if not self._check_for_site(action_result, site):
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
         endpoint = "/sites/{}/scans".format(site)
 
