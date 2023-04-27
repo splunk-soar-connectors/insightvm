@@ -11,7 +11,7 @@ Minimum Product Version: 5.5.0
 This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions
 
 [comment]: # " File: README.md"
-[comment]: # "  Copyright (c) 2017-2022 Splunk Inc."
+[comment]: # "  Copyright (c) 2017-2023 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
