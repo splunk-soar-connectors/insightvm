@@ -1,6 +1,6 @@
 # File: insightvm_connector.py
 #
-# Copyright (c) 2017-2022 Splunk Inc.
+# Copyright (c) 2017-2023 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,6 @@
 # the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
-#
-#
 import json
 import time
 from datetime import datetime
@@ -75,22 +73,22 @@ class InsightVMConnector(phantom.BaseConnector):
 
     def _get_error_message_from_exception(self, e):
         error_code = None
-        error_msg = consts.INSIGHTVM_ERR_MSG_UNAVAILABLE
+        error_message = consts.INSIGHTVM_ERROR_MESSAGE_UNAVAILABLE
 
         try:
             if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_msg = e.args[0]
+                    error_message = e.args[0]
         except Exception:
             self.debug_print("Error occurred while fetching exception information")
 
         if not error_code:
-            error_text = "Error Message: {}".format(error_msg)
+            error_text = "Error Message: {}".format(error_message)
         else:
-            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_msg)
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
 
         return error_text
 
@@ -136,9 +134,9 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             resp_json = r.json()
         except Exception as e:
-            err_msg = self._get_error_message_from_exception(e)
+            error_message = self._get_error_message_from_exception(e)
             return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(err_msg)),
+                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(error_message)),
                 None
             )
 
@@ -220,8 +218,8 @@ class InsightVMConnector(phantom.BaseConnector):
                 timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
-            err_msg = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
-            return RetVal(action_result.set_status(phantom.APP_ERROR, err_msg), resp_json)
+            error_message = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), resp_json)
 
         return self._process_response(r, action_result)
 
@@ -262,17 +260,17 @@ class InsightVMConnector(phantom.BaseConnector):
         if parameter is not None:
             try:
                 if not float(parameter).is_integer():
-                    return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+                    return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERROR_MESSAGE.format(key)), None
 
                 parameter = int(parameter)
             except Exception:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_INVALID_INTEGER_ERROR_MESSAGE.format(key)), None
 
             if parameter < 0:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_NEGATIVE_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_NEGATIVE_INTEGER_ERROR_MESSAGE.format(key)), None
 
             if not allow_zero and parameter == 0:
-                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_ZERO_INTEGER_ERR_MSG.format(key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.INSIGHT_ZERO_INTEGER_ERROR_MESSAGE.format(key)), None
 
         return phantom.APP_SUCCESS, parameter
 
@@ -293,8 +291,8 @@ class InsightVMConnector(phantom.BaseConnector):
         self.save_progress("Detected InsightVM version {0}".format(version))
 
         if not self._check_for_site(action_result, self.get_config()['site']):
-            self.save_progress(consts.INSIGHTVM_ERR_TEST_CONNECTIVITY)
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+            self.save_progress(consts.INSIGHTVM_ERROR_TEST_CONNECTIVITY)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
         self.save_progress(consts.INSIGHT_SUCCESS_TEST_CONNECTIVITY)
         return action_result.set_status(phantom.APP_SUCCESS)
@@ -342,8 +340,8 @@ class InsightVMConnector(phantom.BaseConnector):
             filters = json.loads(param["filters"])
         except Exception as ex:
             self.debug_print("Error parsing json: {}".format(str(ex)))
-            err_msg = self._get_error_message_from_exception(ex)
-            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(err_msg))
+            error_message = self._get_error_message_from_exception(ex)
+            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(error_message))
 
         match = param["match"]
         if match not in consts.MATCH_LIST:
@@ -371,7 +369,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         site = config["site"]
         if not self._check_for_site(action_result, site):
-            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERR_BAD_SITE)
+            return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
         endpoint = "/sites/{}/scans".format(site)
 
