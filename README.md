@@ -2,7 +2,7 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 3.2.1  
+Connector Version: 3.2.2  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): ".\*"  
