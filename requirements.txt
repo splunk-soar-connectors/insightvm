@@ -1,4 +1,2 @@
-beautifulsoup4==4.9.1
 defusedxml==0.7.1
 lxml==4.9.2
-xmltodict==0.12.0
