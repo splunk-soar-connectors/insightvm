@@ -1,6 +1,6 @@
 # File: insightvm_connector.py
 #
-# Copyright (c) 2017-2023 Splunk Inc.
+# Copyright (c) 2017-2024 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -98,9 +98,10 @@ class InsightVMConnector(phantom.BaseConnector):
             return RetVal(phantom.APP_SUCCESS, {})
 
         return RetVal(
-            action_result.set_status(phantom.APP_ERROR,
-            "Status code: {}. Empty response and no information in the header".format(response.status_code)),
-            None
+            action_result.set_status(
+                phantom.APP_ERROR, "Status code: {}. Empty response and no information in the header".format(response.status_code)
+            ),
+            None,
         )
 
     def _process_html_response(self, response, action_result):
@@ -135,19 +136,14 @@ class InsightVMConnector(phantom.BaseConnector):
             resp_json = r.json()
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(error_message)),
-                None
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(error_message)), None)
 
         # Please specify the status codes here
         if 200 <= r.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
-        message = "Error from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
-        )
+        message = "Error from server. Status Code: {0} Data from server: {1}".format(r.status_code, r.text.replace("{", "{{").replace("}", "}}"))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
@@ -198,10 +194,7 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             request_func = getattr(requests, method)
         except AttributeError:
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)),
-                resp_json
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
 
         # Create a URL to connect to
         url = "{}{}".format(self._base_url, endpoint)
@@ -209,13 +202,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         try:
             r = request_func(
-                url,
-                auth=self._auth,
-                json=data,
-                headers=headers,
-                params=params,
-                verify=self._verify,
-                timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
+                url, auth=self._auth, json=data, headers=headers, params=params, verify=self._verify, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
             error_message = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
@@ -290,7 +277,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         self.save_progress("Detected InsightVM version {0}".format(version))
 
-        if not self._check_for_site(action_result, self.get_config()['site']):
+        if not self._check_for_site(action_result, self.get_config()["site"]):
             self.save_progress(consts.INSIGHTVM_ERROR_TEST_CONNECTIVITY)
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
@@ -345,8 +332,9 @@ class InsightVMConnector(phantom.BaseConnector):
 
         match = param["match"]
         if match not in consts.MATCH_LIST:
-            return action_result.set_status(phantom.APP_ERROR,
-                   "Please provide a value from {} in the 'match' parameter".format(consts.MATCH_LIST))
+            return action_result.set_status(
+                phantom.APP_ERROR, "Please provide a value from {} in the 'match' parameter".format(consts.MATCH_LIST)
+            )
 
         payload = {"filters": filters, "match": match}
 
@@ -514,9 +502,7 @@ def main():
             login_url = InsightVMConnector._get_phantom_base_url() + "/login"
 
             print("Accessing the Login page")
-            r = requests.get(
-                login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True
-            )
+            r = requests.get(login_url, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT, verify=True)
             csrftoken = r.cookies["csrftoken"]
 
             data = dict()

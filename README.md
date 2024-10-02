@@ -2,16 +2,16 @@
 # InsightVM
 
 Publisher: Splunk  
-Connector Version: 3.2.2  
+Connector Version: 3.2.3  
 Product Vendor: Rapid7  
 Product Name: InsightVM  
 Product Version Supported (regex): ".\*"  
-Minimum Product Version: 5.5.0  
+Minimum Product Version: 6.2.1  
 
 This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions
 
 [comment]: # " File: README.md"
-[comment]: # "  Copyright (c) 2017-2023 Splunk Inc."
+[comment]: # "  Copyright (c) 2017-2024 Splunk Inc."
 [comment]: # ""
 [comment]: # "Licensed under the Apache License, Version 2.0 (the 'License');"
 [comment]: # "you may not use this file except in compliance with the License."
