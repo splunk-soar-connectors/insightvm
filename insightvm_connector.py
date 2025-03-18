@@ -1,6 +1,6 @@
 # File: insightvm_connector.py
 #
-# Copyright (c) 2017-2024 Splunk Inc.
+# Copyright (c) 2017-2025 Splunk Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,9 +38,8 @@ class InsightVMConnector(phantom.BaseConnector):
     ACTION_ID_GET_ASSET_VULNERABILITIES = "get_asset_vulnerabilities"
 
     def __init__(self):
-
         # Call the BaseConnectors init first
-        super(InsightVMConnector, self).__init__()
+        super().__init__()
 
         self._base_url = None
         self._session_id = None
@@ -50,7 +49,6 @@ class InsightVMConnector(phantom.BaseConnector):
         self._password = None
 
     def initialize(self):
-
         config = self.get_config()
 
         self._base_url = consts.INSIGHTVM_API_URL.format(config[phantom.APP_JSON_DEVICE], config[phantom.APP_JSON_PORT])
@@ -66,7 +64,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return phantom.APP_SUCCESS
 
     def finalize(self):
-
         self.save_state(self._state)
 
         return phantom.APP_SUCCESS
@@ -86,26 +83,22 @@ class InsightVMConnector(phantom.BaseConnector):
             self.debug_print("Error occurred while fetching exception information")
 
         if not error_code:
-            error_text = "Error Message: {}".format(error_message)
+            error_text = f"Error Message: {error_message}"
         else:
-            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
+            error_text = f"Error Code: {error_code}. Error Message: {error_message}"
 
         return error_text
 
     def _process_empty_response(self, response, action_result):
-
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
         return RetVal(
-            action_result.set_status(
-                phantom.APP_ERROR, "Status code: {}. Empty response and no information in the header".format(response.status_code)
-            ),
+            action_result.set_status(phantom.APP_ERROR, f"Status code: {response.status_code}. Empty response and no information in the header"),
             None,
         )
 
     def _process_html_response(self, response, action_result):
-
         # An html response, treat it like an error
         status_code = response.status_code
 
@@ -123,32 +116,30 @@ class InsightVMConnector(phantom.BaseConnector):
         except Exception:
             error_text = "Cannot parse error details"
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
+        message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
 
         message = message.replace("{", "{{").replace("}", "}}")
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_json_response(self, r, action_result):
-
         # Try a json parse
         try:
             resp_json = r.json()
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(error_message)), None)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Unable to parse JSON response. Error: {error_message}"), None)
 
         # Please specify the status codes here
         if 200 <= r.status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
-        message = "Error from server. Status Code: {0} Data from server: {1}".format(r.status_code, r.text.replace("{", "{{").replace("}", "}}"))
+        message = "Error from server. Status Code: {} Data from server: {}".format(r.status_code, r.text.replace("{", "{{").replace("}", "}}"))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_response(self, r, action_result):
-
         # store the r_text in debug data, it will get dumped in the logs if the action fails
         if hasattr(action_result, "add_debug_data"):
             action_result.add_debug_data({"r_status_code": r.status_code})
@@ -173,7 +164,7 @@ class InsightVMConnector(phantom.BaseConnector):
             return self._process_empty_response(r, action_result)
 
         # everything else is actually an error at this point
-        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
+        message = "Can't process response from server. Status Code: {} Data from server: {}".format(
             r.status_code, r.text.replace("{", "{{").replace("}", "}}")
         )
 
@@ -188,16 +179,16 @@ class InsightVMConnector(phantom.BaseConnector):
         data=None,
         method="get",
     ):
-        self.debug_print("Making rest call for: {}".format(self.get_action_identifier()))
+        self.debug_print(f"Making rest call for: {self.get_action_identifier()}")
         resp_json = None
 
         try:
             request_func = getattr(requests, method)
         except AttributeError:
-            return RetVal(action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)), resp_json)
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         # Create a URL to connect to
-        url = "{}{}".format(self._base_url, endpoint)
+        url = f"{self._base_url}{endpoint}"
         self._auth = HTTPBasicAuth(self._username, self._password)
 
         try:
@@ -205,13 +196,12 @@ class InsightVMConnector(phantom.BaseConnector):
                 url, auth=self._auth, json=data, headers=headers, params=params, verify=self._verify, timeout=consts.INSIGHTVM_DEFAULT_TIMEOUT
             )
         except Exception as e:
-            error_message = "Error connecting to server. Details: {}".format(self._get_error_message_from_exception(e))
+            error_message = f"Error connecting to server. Details: {self._get_error_message_from_exception(e)}"
             return RetVal(action_result.set_status(phantom.APP_ERROR, error_message), resp_json)
 
         return self._process_response(r, action_result)
 
     def _paginator(self, action_result, endpoint, headers=None, params=None, data=None, method="get", limit=None):
-
         items_list = list()
 
         if not params:
@@ -262,7 +252,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return phantom.APP_SUCCESS, parameter
 
     def _test_connectivity(self, param):
-
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
         endpoint = "/administration/info"
@@ -275,7 +264,7 @@ class InsightVMConnector(phantom.BaseConnector):
 
         version = resp_data.get("version", {}).get("semantic", "Unknown")
 
-        self.save_progress("Detected InsightVM version {0}".format(version))
+        self.save_progress(f"Detected InsightVM version {version}")
 
         if not self._check_for_site(action_result, self.get_config()["site"]):
             self.save_progress(consts.INSIGHTVM_ERROR_TEST_CONNECTIVITY)
@@ -285,7 +274,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _check_for_site(self, action_result, site_id):
-
         sites = self._get_sites(action_result)
 
         if sites is None:
@@ -294,7 +282,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return any(site.get("id") == site_id for site in sites)
 
     def _get_sites(self, action_result):
-
         endpoint = "/sites"
 
         resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
@@ -302,7 +289,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return resp_data
 
     def _list_sites(self, param):
-
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
         sites = self._get_sites(action_result)
@@ -318,7 +304,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _find_assets(self, param):
-
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
         endpoint = "/assets/search"
@@ -326,15 +311,13 @@ class InsightVMConnector(phantom.BaseConnector):
         try:
             filters = json.loads(param["filters"])
         except Exception as ex:
-            self.debug_print("Error parsing json: {}".format(str(ex)))
+            self.debug_print(f"Error parsing json: {ex!s}")
             error_message = self._get_error_message_from_exception(ex)
-            return action_result.set_status(phantom.APP_ERROR, "Error parsing filters. Details: {}".format(error_message))
+            return action_result.set_status(phantom.APP_ERROR, f"Error parsing filters. Details: {error_message}")
 
         match = param["match"]
         if match not in consts.MATCH_LIST:
-            return action_result.set_status(
-                phantom.APP_ERROR, "Please provide a value from {} in the 'match' parameter".format(consts.MATCH_LIST)
-            )
+            return action_result.set_status(phantom.APP_ERROR, f"Please provide a value from {consts.MATCH_LIST} in the 'match' parameter")
 
         payload = {"filters": filters, "match": match}
 
@@ -351,7 +334,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _on_poll(self, param):
-
         config = self.get_config()
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
@@ -359,7 +341,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if not self._check_for_site(action_result, site):
             return action_result.set_status(phantom.APP_ERROR, consts.INSIGHTVM_ERROR_BAD_SITE)
 
-        endpoint = "/sites/{}/scans".format(site)
+        endpoint = f"/sites/{site}/scans"
 
         ret_val, resp_data = self._make_rest_call(action_result, endpoint)
 
@@ -394,10 +376,10 @@ class InsightVMConnector(phantom.BaseConnector):
                     continue
 
             container = {
-                "name": "Scan ID {0}".format(scan["id"]),
+                "name": "Scan ID {}".format(scan["id"]),
                 "source_data_identifier": scan["id"],
                 "label": config.get("ingest", {}).get("container_label"),
-                "description": "Scan {0} for Site {1}".format(scan["id"], site),
+                "description": "Scan {} for Site {}".format(scan["id"], site),
             }
             self.save_progress("Ingesting scan id: {}".format(scan["id"]))
             ret_val, message, container_id = self.save_container(container)
@@ -418,14 +400,13 @@ class InsightVMConnector(phantom.BaseConnector):
             ret_val, message, artifact_id = self.save_artifacts([scan_artifact])
 
             if not ret_val:
-                self.save_progress("Failed to save artifact: {}".format(message))
+                self.save_progress(f"Failed to save artifact: {message}")
             else:
-                self.save_progress("Artifact saved with id: {}".format(artifact_id))
+                self.save_progress(f"Artifact saved with id: {artifact_id}")
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _get_asset_vulnerabilities(self, param):
-
         action_result = self.add_action_result(phantom.ActionResult(dict(param)))
 
         asset_id = param["asset_id"]
@@ -434,7 +415,7 @@ class InsightVMConnector(phantom.BaseConnector):
         if phantom.is_fail(status):
             return action_result.get_status()
 
-        endpoint = "/assets/{}/vulnerabilities".format(asset_id)
+        endpoint = f"/assets/{asset_id}/vulnerabilities"
 
         resp_data = self._paginator(action_result=action_result, endpoint=endpoint)
 
@@ -449,7 +430,6 @@ class InsightVMConnector(phantom.BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def handle_action(self, param):
-
         ret_val = None
 
         # Get the action that we are supposed to execute for this App Run
@@ -524,7 +504,7 @@ def main():
             )
             session_id = r2.cookies["sessionid"]
         except Exception as e:
-            print("Unable to get session id from the platform. Error: {}".format(str(e)))
+            print(f"Unable to get session id from the platform. Error: {e!s}")
             sys.exit(1)
 
     with open(args.input_test_json) as f:
