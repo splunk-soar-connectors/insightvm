@@ -974,18 +974,6 @@
             "versions": "EQ(*)"
         }
     ],
-    "pip_dependencies": {
-        "wheel": [
-            {
-                "module": "defusedxml",
-                "input_file": "wheels/shared/defusedxml-0.7.1-py2.py3-none-any.whl"
-            },
-            {
-                "module": "lxml",
-                "input_file": "wheels/py36/lxml-4.9.2-cp36-cp36m-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl"
-            }
-        ]
-    },
     "pip39_dependencies": {
         "wheel": [
             {
