@@ -1,7 +1,7 @@
 # InsightVM
 
 Publisher: Splunk \
-Connector Version: 3.2.3 \
+Connector Version: 3.2.4 \
 Product Vendor: Rapid7 \
 Product Name: InsightVM \
 Minimum Product Version: 6.2.1
