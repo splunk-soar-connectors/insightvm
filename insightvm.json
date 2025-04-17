@@ -7,7 +7,7 @@
     "type": "information",
     "license": "Copyright (c) 2017-2025 Splunk Inc.",
     "main_module": "insightvm_connector.py",
-    "app_version": "3.2.4",
+    "app_version": "3.2.5",
     "utctime_updated": "2025-04-14T21:49:06.555415Z",
     "product_vendor": "Rapid7",
     "product_name": "InsightVM",
