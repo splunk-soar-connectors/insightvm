@@ -1,2 +1,2 @@
 defusedxml==0.7.1
-lxml==4.9.2
+lxml==5.3.0
