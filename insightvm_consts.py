@@ -40,5 +40,5 @@ INSIGHTVM_ERROR_MESSAGE_UNAVAILABLE = "Error message unavailable. Please check t
 
 # Constants related to "_validate_integer"
 INSIGHT_INVALID_INTEGER_ERROR_MESSAGE = "Please provide a valid integer value in the {} parameter"
-INSIGHT_NEGATIVE_INTEGER_ERROR_MMESSAGE = "Please provide a valid non-negative integer value in the {} parameter"
-INSIGHT_ZERO_INTEGER_ERROR_MMESSAGE = "Please provide a valid non-zero integer value in the {} parameter"
+INSIGHT_NEGATIVE_INTEGER_ERROR_MESSAGE = "Please provide a valid non-negative integer value in the {} parameter"
+INSIGHT_ZERO_INTEGER_ERROR_MESSAGE = "Please provide a valid non-zero integer value in the {} parameter"
