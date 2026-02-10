@@ -1,3 +1,1 @@
 **Unreleased**
-* Resolved app issues related to Python 3.13 upgrade
-* Updated app for Python 3.13 compatibility
