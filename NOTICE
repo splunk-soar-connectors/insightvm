@@ -1,5 +1,5 @@
 Splunk SOAR App: InsightVM
-Copyright (c) 2017-2025 Splunk Inc.
+Copyright (c) 2017-2026 Splunk Inc.
 Third Party Software Attributions:
 
 @@@@============================================================================
@@ -62,10 +62,12 @@ Agreement.
 
 @@@@============================================================================
 
-Library: lxml - 5.3.0
+Library: lxml - 6.0.0
 Homepage: https://lxml.de/
 License: BSD License
 License Text:
+
+BSD 3-Clause License
 
 Copyright (c) 2004 Infrae. All rights reserved.
 

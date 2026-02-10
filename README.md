@@ -1,9 +1,9 @@
 # InsightVM
 
-Publisher: Splunk \
-Connector Version: 3.2.5 \
-Product Vendor: Rapid7 \
-Product Name: InsightVM \
+Publisher: Splunk <br>
+Connector Version: 3.2.5 <br>
+Product Vendor: Rapid7 <br>
+Product Name: InsightVM <br>
 Minimum Product Version: 6.2.1
 
 This app integrates with Rapid7 InsightVM (formerly Nexpose) to ingest scan data and perform investigative actions
@@ -29,17 +29,17 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Check authentication with the InsightVM instance \
-[list sites](#action-list-sites) - List all sites found on the InsightVM instance \
-[on poll](#action-on-poll) - Ingest scan data from InsightVM \
-[find assets](#action-find-assets) - Find assets on the InsightVM instance \
+[test connectivity](#action-test-connectivity) - Check authentication with the InsightVM instance <br>
+[list sites](#action-list-sites) - List all sites found on the InsightVM instance <br>
+[on poll](#action-on-poll) - Ingest scan data from InsightVM <br>
+[find assets](#action-find-assets) - Find assets on the InsightVM instance <br>
 [get asset vulnerabilities](#action-get-asset-vulnerabilities) - Retrieve all vulnerability findings on an asset
 
 ## action: 'test connectivity'
 
 Check authentication with the InsightVM instance
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -54,7 +54,7 @@ No Output
 
 List all sites found on the InsightVM instance
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -92,7 +92,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Ingest scan data from InsightVM
 
-Type: **ingest** \
+Type: **ingest** <br>
 Read only: **True**
 
 Basic configuration parameters for this action are available in asset configuration.<br><br>Only scan data from the site specified in the <b>site</b> asset configuration parameter will be ingested.<br><br>The app will create a container for each scan that has been completed on the site since the last polling interval. Each container will have an artifact with information about the scan with the following CEF fields:<ul><li>siteId</li><li>scanId</li><li>engineId</li><li>startTime</li><li>endTime</li><li>status</li><li>vulnerabilities</li><li>nodes</li><li>tasks</li></ul>The other artifacts in the container will contain data about the vulnerabilities detected during the scan with each having a CEF field with a count of vulnerabilities found. If the information is available, CEF fields will be created with counts for different severity levels for each vulnerability. The container and all artifacts will be given a medium severity.<br><br>POLL NOW will ingest the oldest scans up to a maximum specified by <b>container_count</b>.
@@ -115,7 +115,7 @@ No Output
 
 Find assets on the InsightVM instance
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -202,7 +202,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Retrieve all vulnerability findings on an asset
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -240,7 +240,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

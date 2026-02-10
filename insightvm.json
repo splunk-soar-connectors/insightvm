@@ -5,7 +5,7 @@
     "publisher": "Splunk",
     "package_name": "phantom_insightvm",
     "type": "information",
-    "license": "Copyright (c) 2017-2025 Splunk Inc.",
+    "license": "Copyright (c) 2017-2026 Splunk Inc.",
     "main_module": "insightvm_connector.py",
     "app_version": "3.2.5",
     "utctime_updated": "2025-04-14T21:49:06.555415Z",
@@ -13,7 +13,7 @@
     "product_name": "InsightVM",
     "product_version_regex": ".*",
     "min_phantom_version": "6.2.1",
-    "python_version": "3",
+    "python_version": "3.9, 3.13",
     "fips_compliant": true,
     "latest_tested_versions": [
         "On prem, Version 6.6.145"
@@ -982,7 +982,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py39/lxml-5.3.0-cp39-cp39-manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py39/lxml-6.0.0-cp39-cp39-manylinux_2_26_x86_64.manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
             }
         ]
     },
@@ -994,7 +994,7 @@
             },
             {
                 "module": "lxml",
-                "input_file": "wheels/py313/lxml-5.3.0-cp313-cp313-manylinux_2_28_x86_64.whl"
+                "input_file": "wheels/py313/lxml-6.0.0-cp313-cp313-manylinux_2_26_x86_64.manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl"
             }
         ]
     }
