@@ -52,7 +52,7 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
 
         self._base_url = consts.INSIGHTVM_API_URL.format(config[phantom.APP_JSON_DEVICE], config[phantom.APP_JSON_PORT])
-        self._verify = config.get("verify_server_cert", False)
+        self._verify = config.get("verify_server_cert", True)
         self._username = config["username"]
         self._password = config["password"]
         self._state = self.load_state()
