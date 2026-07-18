@@ -211,6 +211,13 @@ class InsightVMConnector(phantom.BaseConnector):
         params["page"] = page
 
         while True:
+            if page >= consts.MAX_PAGINATION_PAGES:
+                action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Stopped pagination after the maximum of {consts.MAX_PAGINATION_PAGES} pages",
+                )
+                return None
+
             ret_val, items = self._make_rest_call(action_result, endpoint, headers=headers, params=params, data=data, method=method)
 
             if phantom.is_fail(ret_val):
