@@ -13,7 +13,6 @@
 # either express or implied. See the License for the specific language governing permissions
 # and limitations under the License.
 import json
-import time
 from datetime import datetime
 
 import phantom.app as phantom
@@ -52,7 +51,7 @@ class InsightVMConnector(phantom.BaseConnector):
         config = self.get_config()
 
         self._base_url = consts.INSIGHTVM_API_URL.format(config[phantom.APP_JSON_DEVICE], config[phantom.APP_JSON_PORT])
-        self._verify = config.get("verify_server_cert", False)
+        self._verify = config.get("verify_server_cert", True)
         self._username = config["username"]
         self._password = config["password"]
         self._state = self.load_state()
@@ -212,6 +211,13 @@ class InsightVMConnector(phantom.BaseConnector):
         params["page"] = page
 
         while True:
+            if page >= consts.MAX_PAGINATION_PAGES:
+                action_result.set_status(
+                    phantom.APP_ERROR,
+                    f"Stopped pagination after the maximum of {consts.MAX_PAGINATION_PAGES} pages",
+                )
+                return None
+
             ret_val, items = self._make_rest_call(action_result, endpoint, headers=headers, params=params, data=data, method=method)
 
             if phantom.is_fail(ret_val):
@@ -344,14 +350,16 @@ class InsightVMConnector(phantom.BaseConnector):
         endpoint = f"/sites/{site}/scans"
 
         ret_val, resp_data = self._make_rest_call(action_result, endpoint)
+        if phantom.is_fail(ret_val):
+            return action_result.get_status()
 
         count = 0
         max_containers = 0
         last_time = self._state.get("last_time", 0)
+        successful_end_times = []
+        failed_scans = 0
 
-        if not self.is_poll_now():
-            self._state["last_time"] = time.time()
-        else:
+        if self.is_poll_now():
             max_containers = param.get("container_count", consts.INSIGHTVM_DEFAULT_CONTAINER_COUNT)
 
         scan_data = dict(resp_data).get("resources", [])
@@ -360,49 +368,66 @@ class InsightVMConnector(phantom.BaseConnector):
             scan_data = [scan_data]
 
         for scan in scan_data:
-            if scan["status"] != "finished":
-                self.save_progress("The scan for id: {} is not finished. Continuing with the next scan".format(scan["id"]))
-                continue
-
-            if self.is_poll_now():
-                if count >= max_containers:
-                    break
-                count += 1
-
-            else:
-                finished_datetime = datetime.strptime(scan["endTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
-                finished_epoch = (finished_datetime - datetime.utcfromtimestamp(0)).total_seconds()
-                if finished_epoch < last_time:
+            try:
+                if scan["status"] != "finished":
+                    self.save_progress("The scan for id: {} is not finished. Continuing with the next scan".format(scan["id"]))
                     continue
 
-            container = {
-                "name": "Scan ID {}".format(scan["id"]),
-                "source_data_identifier": scan["id"],
-                "label": config.get("ingest", {}).get("container_label"),
-                "description": "Scan {} for Site {}".format(scan["id"], site),
-            }
-            self.save_progress("Ingesting scan id: {}".format(scan["id"]))
-            ret_val, message, container_id = self.save_container(container)
+                finished_epoch = datetime.fromisoformat(scan["endTime"].replace("Z", "+00:00")).timestamp()
 
-            if not ret_val:
-                continue
+                if self.is_poll_now():
+                    if count >= max_containers:
+                        break
+                    count += 1
+                elif finished_epoch < last_time:
+                    continue
 
-            scan_artifact = {
-                "cef": scan.get("vulnerabilities"),
-                "type": "scan",
-                "label": "scan",
-                "name": "Scan Artifact",
-                "container_id": container_id,
-                "source_data_identifier": scan["id"],
-                "cef_types": {"scanId": ["insightvm scan id"]},
-            }
+                container = {
+                    "name": "Scan ID {}".format(scan["id"]),
+                    "source_data_identifier": scan["id"],
+                    "label": config.get("ingest", {}).get("container_label"),
+                    "description": "Scan {} for Site {}".format(scan["id"], site),
+                }
+                self.save_progress("Ingesting scan id: {}".format(scan["id"]))
+                ret_val, message, container_id = self.save_container(container)
 
-            ret_val, message, artifact_id = self.save_artifacts([scan_artifact])
+                if phantom.is_fail(ret_val):
+                    self.save_progress(f"Failed to save scan container: {message}")
+                    failed_scans += 1
+                    continue
 
-            if not ret_val:
-                self.save_progress(f"Failed to save artifact: {message}")
-            else:
+                scan_artifact = {
+                    "cef": scan.get("vulnerabilities"),
+                    "type": "scan",
+                    "label": "scan",
+                    "name": "Scan Artifact",
+                    "container_id": container_id,
+                    "source_data_identifier": scan["id"],
+                    "cef_types": {"scanId": ["insightvm scan id"]},
+                }
+
+                ret_val, message, artifact_id = self.save_artifacts([scan_artifact])
+
+                if phantom.is_fail(ret_val):
+                    self.save_progress(f"Failed to save artifact: {message}")
+                    failed_scans += 1
+                    continue
+
                 self.save_progress(f"Artifact saved with id: {artifact_id}")
+                successful_end_times.append(finished_epoch)
+            except Exception as e:
+                failed_scans += 1
+                self.save_progress(f"Failed to process scan {scan.get('id', 'unknown')}: {e!s}")
+
+        if not self.is_poll_now() and not failed_scans and successful_end_times:
+            self._state["last_time"] = max(successful_end_times)
+
+        if failed_scans:
+            action_result.set_summary({"failed_scans": failed_scans})
+            return action_result.set_status(
+                phantom.APP_ERROR,
+                f"Failed to ingest {failed_scans} scan(s); checkpoint preserved for retry",
+            )
 
         return action_result.set_status(phantom.APP_SUCCESS)
 
